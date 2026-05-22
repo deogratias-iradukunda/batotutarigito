@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("guest") // admin, student, guest
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student      Student?
+  shares       Share[]
+  sentComments Comment[] @relation("Sender")
+}
+
+model Student {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  telephone       String?
+  gender          String?
+  department      String?
+  level           String?
+  startDate       DateTime?
+  endDate         DateTime?
+  profileImage    String?
+  sector          String?
+  cell            String?
+  village         String?
+  isGraduated     Boolean   @default(false)
+  status          String    @default("active")
+}
+
+model Family {
+  id        String   @id @default(uuid())
+  name      String
+  username  String?
+  telephone String?
+  sector    String?
+  cell      String?
+  village   String?
+  createdAt DateTime @default(now())
+}
+
+model Cow {
+  id               String   @id @default(uuid())
+  cowNumber        String   @unique
+  dateReceived     DateTime
+  purchaseAmount   Float
+  parentCowId      String?
+  calves           Int      @default(0)
+  value            Float?
+  medicineExpenses Float    @default(0)
+  otherExpenses    Float    @default(0)
+  createdAt        DateTime @default(now())
+}
+
+model Announcement {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  images      String[]
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model Comment {
+  id           String   @id @default(uuid())
+  name         String
+  email        String
+  message      String
+  status       String   @default("pending") // pending, read, resolved
+  createdAt    DateTime @default(now())
+  senderUserId String?
+  sender       User?    @relation("Sender", fields: [senderUserId], references: [id])
+  targetUserId String?
+  targetRole   String?
+}
+
+model Share {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userName   String
+  amount     Float
+  shareDate  DateTime
+  expiryDate DateTime
+  status     String   @default("active")
+  createdAt  DateTime @default(now())
+}
+
+model SupportRecord {
+  id              String   @id @default(uuid())
+  beneficiaryName String
+  telephone       String?
+  address         String?
+  date            DateTime
+  supportType     String
+  createdAt       DateTime @default(now())
+}
