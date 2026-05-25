@@ -239,7 +239,7 @@ export const Chatbot: React.FC = () => {
                     <button 
                       key={faq}
                       onClick={() => handleSend(faq)}
-                      className="text-xs bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60 px-3 py-1.5 rounded-full text-slate-755 dark:text-slate-355 hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400 dark:hover:border-blue-500 transition-all active:scale-95 text-left font-medium"
+                      className="text-xs bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-700/60 px-3 py-1.5 rounded-full text-slate-700 dark:text-slate-300 hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400 dark:hover:border-blue-500 transition-all active:scale-95 text-left font-medium"
                     >
                       {faq}
                     </button>

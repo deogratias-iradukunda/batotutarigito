@@ -219,7 +219,7 @@ export const AdminDashboard: React.FC = () => {
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 placeholder="Search anything..." 
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600 w-64 dark:text-white"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600 w-64 text-slate-900 dark:text-white font-medium"
               />
             </div>
             <button 
@@ -379,7 +379,7 @@ export const AdminDashboard: React.FC = () => {
               <div className="flex justify-end gap-3 font-semibold text-xs font-sans">
                 <button 
                   onClick={() => setDeleteConfirm(null)} 
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-750 hover:bg-slate-105 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
                 >
                   Cancel
                 </button>
@@ -748,7 +748,7 @@ const ShareManagement = ({ data, onEdit, onDelete }: any) => (
             </tr>
           ) : data.map((sh: any) => (
             <tr key={sh.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-              <td className="px-6 py-4 font-mono text-xs text-slate-405">{sh.id?.substring(0, 8).toUpperCase()}</td>
+              <td className="px-6 py-4 font-mono text-xs text-slate-400">{sh.id?.substring(0, 8).toUpperCase()}</td>
               <td className="px-6 py-4 font-bold dark:text-white text-slate-900">{sh.userName}</td>
               <td className="px-6 py-4 font-bold text-blue-600 dark:text-blue-400 font-mono">
                 {new Intl.NumberFormat('en-RW', { style: 'currency', currency: 'RWF' }).format(sh.amount)}
@@ -841,7 +841,7 @@ const SupportManagement = ({ data, onEdit, onDelete }: any) => (
           <tr key={sup.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
             <td className="px-6 py-4 font-bold dark:text-white text-slate-900">{sup.beneficiaryName}</td>
             <td className="px-6 py-4 text-slate-500">{sup.telephone || '-'}</td>
-            <td className="px-6 py-4 text-xs dark:text-slate-300 text-slate-605">{sup.address || '-'}</td>
+            <td className="px-6 py-4 text-xs dark:text-slate-300 text-slate-500">{sup.address || '-'}</td>
             <td className="px-6 py-4">
               <span className="px-2 py-0.5 rounded-full text-[9px] bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 font-bold uppercase border border-blue-200">
                 {sup.supportType}
@@ -892,8 +892,8 @@ const CommentManagement = ({ data, onEdit, onDelete }: any) => {
                 {c.status}
               </span>
             </div>
-            <p className="text-sm text-slate-605 dark:text-slate-405 leading-relaxed font-semibold">{c.message}</p>
-            <p className="text-[10px] text-slate-405 font-bold">{format(new Date(c.createdAt), 'MMM d, yyyy HH:mm')}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-semibold">{c.message}</p>
+            <p className="text-[10px] text-slate-400 font-bold">{format(new Date(c.createdAt), 'MMM d, yyyy HH:mm')}</p>
           </div>
           <div className="flex gap-2 shrink-0 text-xs font-bold">
             <button 
@@ -958,7 +958,7 @@ const CalvesManagement = ({ data, onEdit, onDelete }: any) => {
                 <td className="px-6 py-4">
                   {calf.fromFamily ? (
                     <div>
-                      <p className="font-bold text-slate-805 dark:text-slate-205">{calf.fromFamily.name}</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-200">{calf.fromFamily.name}</p>
                       <p className="text-[10px] text-slate-400 font-normal">@{calf.fromFamily.username || 'n/a'}</p>
                     </div>
                   ) : (
@@ -975,7 +975,7 @@ const CalvesManagement = ({ data, onEdit, onDelete }: any) => {
                     <span className="text-slate-400 italic">No destination family</span>
                   )}
                 </td>
-                <td className="px-6 py-4 text-slate-505 font-medium">
+                <td className="px-6 py-4 text-slate-500 font-medium">
                   {calf.transferDate ? format(new Date(calf.transferDate), 'MMM d, yyyy') : 'n/a'}
                 </td>
                 <td className="px-6 py-4 text-right space-x-2 text-xs font-bold shrink-0">
@@ -1159,11 +1159,11 @@ const ManagementForm = ({ type, initialData, onClose }: any) => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-455 uppercase">Date Assigned</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Date Assigned</label>
                   <input type="date" value={formData.cowProjectDate ? new Date(formData.cowProjectDate).toISOString().split('T')[0] : ""} onChange={e => setFormData({...formData, cowProjectDate: e.target.value})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-mono" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-455 uppercase">Amount Value (RWF)</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Amount Value (RWF)</label>
                   <input type="number" value={formData.cowProjectAmount || ""} onChange={e => setFormData({...formData, cowProjectAmount: parseFloat(e.target.value)})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-mono" />
                 </div>
               </div>
@@ -1177,7 +1177,7 @@ const ManagementForm = ({ type, initialData, onClose }: any) => {
                   <input value={formData.calvesSource || ""} onChange={e => setFormData({...formData, calvesSource: e.target.value})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-medium" placeholder="e.g. Gasabo-Hub" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-550 uppercase">Calf Value Amount (RWF)</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Calf Value Amount (RWF)</label>
                   <input type="number" value={formData.calvesAmount || ""} onChange={e => setFormData({...formData, calvesAmount: parseFloat(e.target.value)})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-mono" />
                 </div>
               </div>
@@ -1322,7 +1322,7 @@ const ManagementForm = ({ type, initialData, onClose }: any) => {
         );
       case "calves":
         return (
-          <div className="space-y-4 text-slate-705">
+          <div className="space-y-4 text-slate-700">
             <div className="space-y-1 font-semibold">
               <label className="text-xs font-bold text-slate-500 uppercase">Origin Cow (Select Cow Tag)</label>
               <select 
@@ -1371,7 +1371,7 @@ const ManagementForm = ({ type, initialData, onClose }: any) => {
             </div>
 
             <div className="space-y-1 font-semibold">
-              <label className="text-xs font-bold text-slate-505 uppercase">Transfer Date</label>
+              <label className="text-xs font-bold text-slate-500 uppercase">Transfer Date</label>
               <input 
                 required 
                 type="date" 

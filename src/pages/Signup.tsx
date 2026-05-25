@@ -40,7 +40,7 @@ export const Signup: React.FC = () => {
         </div>
         
         <p className="text-xs text-slate-400">
-          For technical issues or registration inquiries, please contact info@batotutarigito.org
+          For technical issues or registration inquiries, please contact cngirababyeyi@gmail.com
         </p>
       </motion.div>
     </div>

@@ -151,7 +151,7 @@ export const Navbar: React.FC = () => {
               </Link>
               <button 
                 onClick={logout}
-                className="bg-slate-900 dark:bg-white dark:text-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors"
+                className="bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 dark:hover:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
                 {t('nav.logout')}
               </button>

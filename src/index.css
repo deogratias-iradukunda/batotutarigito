@@ -21,6 +21,25 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-display tracking-tight;
   }
+
+  /* Global input, textarea, and select text colors and visibility states */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  textarea,
+  select,
+  .form-input {
+    @apply text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium;
+  }
+
+  /* Fix for autofill and dark mode defaults */
+  input:-webkit-autofill {
+    border: inherit;
+    -webkit-text-fill-color: #0f172a !important; /* slate-900 */
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  .dark input:-webkit-autofill {
+    -webkit-text-fill-color: #f8fafc !important; /* slate-50 */
+  }
 }
 
 .premium-card {

@@ -151,7 +151,7 @@ export const UserDashboard: React.FC = () => {
                       required
                       value={passwordForm.currentPassword}
                       onChange={e => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 dark:text-white"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white font-medium"
                     />
                   </div>
                   <div className="space-y-1">
@@ -161,7 +161,7 @@ export const UserDashboard: React.FC = () => {
                       required
                       value={passwordForm.newPassword}
                       onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})}
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 dark:text-white"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white font-medium"
                     />
                   </div>
                   <div className="space-y-1">
@@ -171,7 +171,7 @@ export const UserDashboard: React.FC = () => {
                       required
                       value={passwordForm.confirmPassword}
                       onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 dark:text-white"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white font-medium"
                     />
                   </div>
                   <div className="flex gap-4 pt-2">

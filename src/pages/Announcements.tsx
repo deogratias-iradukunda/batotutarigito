@@ -72,7 +72,7 @@ export const Announcements: React.FC = () => {
                 placeholder="Search announcements..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 dark:text-white text-sm transition-all shadow-sm"
+                className="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 text-slate-900 dark:text-white text-sm transition-all shadow-sm font-medium"
               />
             </div>
           </div>

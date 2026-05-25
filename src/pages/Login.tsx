@@ -138,7 +138,7 @@ export const Login: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 dark:text-white focus:bg-white dark:focus:bg-slate-800 transition-all"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-800 transition-all font-medium"
               />
             </div>
           </div>
@@ -163,7 +163,7 @@ export const Login: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-12 py-3 outline-none focus:ring-2 focus:ring-blue-600 dark:text-white focus:bg-white dark:focus:bg-slate-800 transition-all"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-12 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-800 transition-all font-medium"
                 />
                 <button 
                   type="button"
@@ -244,23 +244,6 @@ export const Login: React.FC = () => {
                     <div className="space-y-1.5 max-h-[220px] overflow-y-auto">
                       <button 
                         type="button"
-                        onClick={() => executeGoogleSignIn("uwizeyimanajoshua@gmail.com")}
-                        className="w-full flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-left group"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center font-bold text-indigo-700 dark:text-indigo-300 text-sm">
-                            JU
-                          </div>
-                          <div>
-                            <div className="text-xs font-semibold">Joshua Uwizeyimana</div>
-                            <div className="text-[10px] text-slate-400">uwizeyimanajoshua@gmail.com</div>
-                          </div>
-                        </div>
-                        <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded font-mono group-hover:bg-indigo-600 group-hover:text-white transition-colors">Admin</span>
-                      </button>
-
-                      <button 
-                        type="button"
                         onClick={() => executeGoogleSignIn("cngirababyeyi@gmail.com")}
                         className="w-full flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-left group"
                       >
@@ -274,23 +257,6 @@ export const Login: React.FC = () => {
                           </div>
                         </div>
                         <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded font-mono group-hover:bg-emerald-600 group-hover:text-white transition-colors">Admin</span>
-                      </button>
-
-                      <button 
-                        type="button"
-                        onClick={() => executeGoogleSignIn("munyeshuriolivier6@gmail.com")}
-                        className="w-full flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-left group"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950 flex items-center justify-center font-bold text-blue-700 dark:text-blue-300 text-sm">
-                            MO
-                          </div>
-                          <div>
-                            <div className="text-xs font-semibold">Munyeshuri Olivier</div>
-                            <div className="text-[10px] text-slate-400">munyeshuriolivier6@gmail.com</div>
-                          </div>
-                        </div>
-                        <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded font-mono group-hover:bg-blue-600 group-hover:text-white transition-colors">Admin</span>
                       </button>
                     </div>
 
@@ -321,7 +287,7 @@ export const Login: React.FC = () => {
                         value={customGoogleEmail}
                         onChange={(e) => setCustomGoogleEmail(e.target.value)}
                         placeholder="your-email@gmail.com"
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-sm dark:text-white focus:bg-white"
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-sm text-slate-900 dark:text-white focus:bg-white font-medium"
                       />
                     </div>
                     <div className="flex space-x-3 pt-2">

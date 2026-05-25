@@ -515,7 +515,7 @@ export const Home: React.FC = () => {
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
                     placeholder="E.g., Gasana Jean"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white text-sm placeholder:text-slate-450 font-medium" 
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium" 
                   />
                 </div>
                 <div className="space-y-2 flex flex-col">
@@ -526,7 +526,7 @@ export const Home: React.FC = () => {
                     value={formData.email}
                     onChange={e => setFormData({...formData, email: e.target.value})}
                     placeholder="E.g., name@example.com"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white text-sm placeholder:text-slate-450 font-medium" 
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium" 
                   />
                 </div>
               </div>
@@ -560,7 +560,7 @@ export const Home: React.FC = () => {
                   value={formData.message}
                   onChange={e => setFormData({...formData, message: e.target.value})}
                   placeholder="Tell us what you would like to know..."
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white text-sm placeholder:text-slate-455 font-normal" 
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 font-normal" 
                 />
               </div>
               <button 
@@ -613,7 +613,7 @@ export const Home: React.FC = () => {
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Current Slideshow Images</h4>
                   <div className="space-y-2 max-h-48 overflow-y-auto border border-slate-100 dark:border-slate-800 rounded-2xl p-2 bg-slate-50/50 dark:bg-slate-900/50">
                     {activeSlides.map((slide, i) => (
-                      <div key={slide.id || i} className="flex items-center justify-between gap-4 p-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-755">
+                      <div key={slide.id || i} className="flex items-center justify-between gap-4 p-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
                         <div className="flex items-center gap-3">
                           <img 
                             src={slide.image} 
