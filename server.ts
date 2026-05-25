@@ -548,6 +548,81 @@ async function startServer() {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // --- Bulk Dashboard Data Endpoint for Speed Optimization ---
+  app.get("/api/dashboard/bulk-data", requireAuth, async (req: any, res: any) => {
+    const authenticatedUser = req.user;
+    if (!authenticatedUser) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const isAdmin = authenticatedUser.role === "admin" || [
+        "iradukundadeogratias33@gmail.com",
+        "cngirababyeyi@gmail.com",
+        "admin@batotutarigito.org",
+        "batotutarigito@gmail.com",
+        "munyeshuriolivier6@gmail.com",
+        "victoirenikubwayo@gmail.com",
+        "uwizeyimanajoshua@gmail.com"
+      ].includes(authenticatedUser.email.toLowerCase());
+
+      // Fetch all collections concurrently
+      const [
+        studentsRaw,
+        families,
+        cows,
+        calves,
+        announcements,
+        commentsRaw,
+        sharesRaw,
+        supportRecords,
+        expenses
+      ] = await Promise.all([
+        prisma.student.findMany({ include: { user: true } }),
+        prisma.family.findMany(),
+        prisma.cow.findMany({ include: { family: true } }),
+        prisma.calf.findMany({ include: { cow: true, fromFamily: true, toFamily: true } }),
+        prisma.announcement.findMany({ orderBy: { createdAt: "desc" } }),
+        isAdmin 
+          ? prisma.comment.findMany({ orderBy: { createdAt: "desc" } })
+          : prisma.comment.findMany({
+              where: {
+                OR: [
+                  { senderUserId: authenticatedUser.id },
+                  { targetUserId: authenticatedUser.id }
+                ]
+              },
+              orderBy: { createdAt: "desc" }
+            }),
+        isAdmin
+          ? prisma.share.findMany({ include: { user: true } })
+          : prisma.share.findMany({ where: { userId: authenticatedUser.id } }),
+        prisma.supportRecord.findMany(),
+        prisma.expense.findMany()
+      ]);
+
+      const students = studentsRaw.map(s => {
+        const u = s.user || {};
+        return { ...s, ...u, id: s.id, userId: s.userId };
+      });
+
+      res.json({
+        students,
+        families,
+        cows,
+        calves,
+        announcements,
+        comments: commentsRaw,
+        shares: sharesRaw,
+        supportRecords,
+        expenses
+      });
+    } catch (error: any) {
+      console.error("❌ Error fetching bulk dashboard data:", error);
+      res.status(500).json({ error: error?.message || "Internal server error" });
+    }
+  });
   
   app.get("/api/resources/:collection", async (req: any, res: any) => {
     const { collection } = req.params;
@@ -694,6 +769,7 @@ async function startServer() {
           data = await prisma.family.create({ 
             data: {
               ...body,
+              name: body.name || body.username || "Family Head",
               cowProjectDate: body.cowProjectDate ? new Date(body.cowProjectDate) : null,
               cowProjectAmount: body.cowProjectAmount ? parseFloat(body.cowProjectAmount) : 0,
               calvesAmount: body.calvesAmount ? parseFloat(body.calvesAmount) : 0,

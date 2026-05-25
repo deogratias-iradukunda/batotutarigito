@@ -75,29 +75,20 @@ export const AdminDashboard: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [students, families, cows, calves, announcements, comments, support, shares, expenses] = await Promise.all([
-        api.get("/api/resources/students"),
-        api.get("/api/resources/families"),
-        api.get("/api/resources/cows"),
-        api.get("/api/resources/calves"),
-        api.get("/api/resources/announcements"),
-        api.get("/api/resources/comments"),
-        api.get("/api/resources/support_records"),
-        api.get("/api/resources/shares"),
-        api.get("/api/resources/expenses")
-      ]);
+      const resp = await api.get("/api/dashboard/bulk-data");
+      const d = resp.data;
 
       setData({
-        students: students.data.filter((s: any) => !s.isGraduated),
-        graduated: students.data.filter((s: any) => s.isGraduated),
-        families: families.data,
-        cows: cows.data,
-        calves: calves.data,
-        announcements: announcements.data,
-        comments: comments.data,
-        supportRecords: support.data,
-        shares: shares.data,
-        expenses: expenses.data
+        students: (d.students || []).filter((s: any) => !s.isGraduated),
+        graduated: (d.students || []).filter((s: any) => s.isGraduated),
+        families: d.families || [],
+        cows: d.cows || [],
+        calves: d.calves || [],
+        announcements: d.announcements || [],
+        comments: d.comments || [],
+        supportRecords: d.supportRecords || [],
+        shares: d.shares || [],
+        expenses: d.expenses || []
       });
     } catch (error: any) {
       console.error("Dashboard Fetch Error:", error);
@@ -1043,6 +1034,10 @@ const ManagementForm = ({ type, initialData, onClose }: any) => {
         finalData.cowNumber = finalData.manualCowNumber || "";
       }
       
+      if (type === "families" && !finalData.name) {
+        finalData.name = finalData.username || "Family Head";
+      }
+
       if (imageFile) {
         const uploadData = new FormData();
         uploadData.append("image", imageFile);
@@ -1118,19 +1113,13 @@ const ManagementForm = ({ type, initialData, onClose }: any) => {
       case "families":
         return (
           <div className="space-y-4 text-slate-700">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Family Head Name</label>
-                <input required value={formData.name || ""} onChange={e => setFormData({...formData, name: e.target.value})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500 uppercase">Username Reference</label>
-                <input required value={formData.username || ""} onChange={e => setFormData({...formData, username: e.target.value})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs" placeholder="e.g. kamil-family" />
-              </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-500 uppercase">Username Reference</label>
+              <input required value={formData.username || ""} onChange={e => setFormData({...formData, username: e.target.value})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs" placeholder="e.g. kamil-family" />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 uppercase">Telephone (tel)</label>
-              <input value={formData.telephone || ""} onChange={e => setFormData({...formData, telephone: e.target.value})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2" />
+              <label className="text-xs font-bold text-slate-500 uppercase">Telephone (tell)</label>
+              <input value={formData.telephone || ""} onChange={e => setFormData({...formData, telephone: e.target.value})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2" placeholder="e.g. +250 788..." />
             </div>
 
             <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
@@ -1147,38 +1136,6 @@ const ManagementForm = ({ type, initialData, onClose }: any) => {
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Village</label>
                   <input required value={formData.village || ""} onChange={e => setFormData({...formData, village: e.target.value})} className="form-input w-full text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2 py-2" />
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3 font-semibold">
-              <h4 className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Cow Project Assignment</h4>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">From which family is cow coming from? (Source)</label>
-                <input value={formData.cowProjectSource || ""} onChange={e => setFormData({...formData, cowProjectSource: e.target.value})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-medium" placeholder="e.g. Jean-Baptiste Family" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Date Assigned</label>
-                  <input type="date" value={formData.cowProjectDate ? new Date(formData.cowProjectDate).toISOString().split('T')[0] : ""} onChange={e => setFormData({...formData, cowProjectDate: e.target.value})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-mono" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Amount Value (RWF)</label>
-                  <input type="number" value={formData.cowProjectAmount || ""} onChange={e => setFormData({...formData, cowProjectAmount: parseFloat(e.target.value)})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-mono" />
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-100 dark:border-slate-800 pt-4 space-y-3 font-semibold">
-              <h4 className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Calf Passing-On Record</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">In which family calf is coming from? (Source Family)</label>
-                  <input value={formData.calvesSource || ""} onChange={e => setFormData({...formData, calvesSource: e.target.value})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-medium" placeholder="e.g. Gasabo-Hub" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Calf Value Amount (RWF)</label>
-                  <input type="number" value={formData.calvesAmount || ""} onChange={e => setFormData({...formData, calvesAmount: parseFloat(e.target.value)})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-xs font-mono" />
                 </div>
               </div>
             </div>
