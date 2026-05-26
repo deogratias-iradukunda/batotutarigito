@@ -4,12 +4,30 @@ import { Mail, Phone, MapPin, Loader2, Send, CheckCircle, Info } from "lucide-re
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
+import { SEO } from "../components/SEO";
 
 export const Contact: React.FC = () => {
   const { user: authUser } = useAuth();
   const [formLoading, setFormLoading] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", message: "", targetUserId: "" });
   const [admins, setAdmins] = useState<any[]>([]);
+
+  const contactSchema = {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    "mainEntity": {
+      "@type": "NGO",
+      "name": "BatoTutariGito",
+      "telephone": "+250 788 123 456",
+      "email": "cngirababyeyi@gmail.com",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Rubengera, Karongi District",
+        "addressRegion": "Western Province",
+        "addressCountry": "Rwanda"
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchAdmins = async () => {
@@ -43,6 +61,12 @@ export const Contact: React.FC = () => {
 
   return (
     <div className="bg-slate-50 dark:bg-slate-950 min-h-screen py-16 px-6">
+      <SEO 
+        title="Contact Us - Interactive Message Board"
+        description="Reach out to BatoTutariGito NGO's leadership and administrator. Fill out our contact form or find our office location and coordinates in Karongi, Rwanda."
+        keywords="Contact BatoTutariGito, Rwanda NGO address, Clement Ngirababyeyi phone, contact office Karongi"
+        schemaData={contactSchema}
+      />
       <div className="max-w-7xl mx-auto space-y-16">
         {/* Header Block */}
         <div className="text-center space-y-4">

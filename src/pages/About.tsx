@@ -2,8 +2,19 @@ import React from "react";
 import { motion } from "motion/react";
 import { Award, BookOpen, Heart, Landmark, Users, CheckCircle, Shield, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
+import { SEO } from "../components/SEO";
 
 export const About: React.FC = () => {
+  const aboutSchema = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "mainEntity": {
+      "@type": "NGO",
+      "name": "BatoTutariGito",
+      "description": "BatoTutariGito NGO works towards community development, student education, and agricultural empowerment in Rwanda."
+    }
+  };
+
   const values = [
     { 
       icon: <BookOpen className="text-blue-600 dark:text-blue-400" size={24} />, 
@@ -36,6 +47,12 @@ export const About: React.FC = () => {
 
   return (
     <div className="bg-slate-50 dark:bg-slate-950 min-h-screen">
+      <SEO 
+        title="About Us - Mission & Core Values"
+        description="Learn about BatoTutariGito's background, dedicated staff, mission values, and the real impact of our local development initiatives in Rwanda."
+        keywords="BatoTutariGito details, Rwanda NGO, NGO mission, cow distribution rules, sponsore students"
+        schemaData={aboutSchema}
+      />
       {/* Hero Banner Section */}
       <section className="relative py-24 bg-slate-900 overflow-hidden">
         <div className="absolute inset-0 z-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url('/umuganda.webp')" }} />

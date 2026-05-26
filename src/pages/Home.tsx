@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import api from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "sonner";
+import { SEO } from "../components/SEO";
 
 export const Home: React.FC = () => {
   const { t } = useTranslation();
@@ -234,8 +235,34 @@ export const Home: React.FC = () => {
   const isAdmin = authUser && userRole === "admin";
   const activeSlides = slides.length > 0 ? slides : defaultBanners;
 
+  const homeSchema = {
+    "@context": "https://schema.org",
+    "@type": "NGO",
+    "name": "BatoTutariGito",
+    "url": typeof window !== "undefined" ? window.location.origin : "https://batotutarigito.org",
+    "logo": typeof window !== "undefined" ? `${window.location.origin}/logo.png` : "https://batotutarigito.org/logo.png",
+    "description": "BatoTutariGito is a non-governmental organization driving student sponsorships, cow distribution, and sustainable agriculture in Rwanda.",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Rubengera, Karongi District",
+      "addressRegion": "Western Province",
+      "addressCountry": "Rwanda"
+    },
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "email": "cngirababyeyi@gmail.com",
+      "contactType": "customer support"
+    }
+  };
+
   return (
     <div className="overflow-hidden bg-slate-50 dark:bg-slate-950">
+      <SEO 
+        title="Home - Community Empowerment & NGO"
+        description="Official homepage of BatoTutariGito NGO, driving student sponsorship programs, family cow distributions, and community development projects in Karongi District, Rwanda."
+        keywords="BatoTutariGito, Rwanda NGO, community empower, cow project, student sponsorship, education support"
+        schemaData={homeSchema}
+      />
       
       {/* Hero Slider */}
       <section className="relative h-[80vh] bg-slate-900 overflow-hidden">
