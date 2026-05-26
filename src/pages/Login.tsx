@@ -20,6 +20,9 @@ export const Login: React.FC = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showGoogleCustomInput, setShowGoogleCustomInput] = useState(false);
   const [customGoogleEmail, setCustomGoogleEmail] = useState("");
+  const [googlePassword, setGooglePassword] = useState("");
+  const [showGooglePasswordPrompt, setShowGooglePasswordPrompt] = useState(false);
+  const [googleEmailToVerify, setGoogleEmailToVerify] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -29,9 +32,12 @@ export const Login: React.FC = () => {
     setShowGoogleModal(true);
     setShowGoogleCustomInput(false);
     setCustomGoogleEmail("");
+    setGooglePassword("");
+    setShowGooglePasswordPrompt(false);
+    setGoogleEmailToVerify("");
   };
 
-  const executeGoogleSignIn = async (chosenEmail: string) => {
+  const executeGoogleSignIn = async (chosenEmail: string, verificationPassword?: string) => {
     if (!chosenEmail || !chosenEmail.includes("@")) {
       toast.error("Please enter a valid Google email address.");
       return;
@@ -41,16 +47,28 @@ export const Login: React.FC = () => {
       toast.error("Google Sign-In is restricted for this platform.");
       return;
     }
+
+    if (!verificationPassword) {
+      setGoogleEmailToVerify(chosenEmail);
+      setShowGooglePasswordPrompt(true);
+      setGooglePassword("");
+      return;
+    }
+
     setGoogleLoading(true);
     try {
       const response = await api.post("/api/auth/google-signin", {
         email: chosenEmail,
-        name: chosenEmail.split("@")[0]
+        name: chosenEmail.split("@")[0],
+        password: verificationPassword
       });
       toast.success(`Success: Authenticated as ${chosenEmail} through Google SSO`);
       const { token, user } = response.data;
       login(token, user);
       setShowGoogleModal(false);
+      setShowGooglePasswordPrompt(false);
+      setGooglePassword("");
+      setGoogleEmailToVerify("");
       navigate(from, { replace: true });
     } catch (error: any) {
       const errorMsg = error.response?.data?.error || error.message || "Google single sign-on failed";
@@ -226,9 +244,11 @@ export const Login: React.FC = () => {
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
                 </svg>
               </div>
-              <h3 className="text-xl font-bold tracking-tight">Choose an account</h3>
+              <h3 className="text-xl font-bold tracking-tight">
+                {showGooglePasswordPrompt ? "Verify your identity" : "Choose an account"}
+              </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                to continue to <span className="font-semibold text-slate-700 dark:text-slate-300">BatoTutariGito</span>
+                {showGooglePasswordPrompt ? "to secure your admin session" : <>to continue to <span className="font-semibold text-slate-700 dark:text-slate-300">BatoTutariGito</span></>}
               </p>
             </div>
 
@@ -239,7 +259,50 @@ export const Login: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {!showGoogleCustomInput ? (
+                {showGooglePasswordPrompt ? (
+                  <form 
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      executeGoogleSignIn(googleEmailToVerify, googlePassword);
+                    }} 
+                    className="space-y-4"
+                  >
+                    <div className="space-y-2">
+                      <div className="text-center bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] text-slate-500 block uppercase font-bold">Verifying Administrator</span>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{googleEmailToVerify}</span>
+                      </div>
+                      <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">Enter Admin Password to Authorize</label>
+                      <input 
+                        type="password"
+                        required
+                        autoFocus
+                        value={googlePassword}
+                        onChange={(e) => setGooglePassword(e.target.value)}
+                        placeholder=""
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-sm text-slate-900 dark:text-white focus:bg-white font-medium"
+                      />
+                    </div>
+                    <div className="flex space-x-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowGooglePasswordPrompt(false);
+                          setGooglePassword("");
+                        }}
+                        className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold py-3 rounded-lg text-slate-700 dark:text-slate-300 transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-xs font-bold py-3 rounded-lg text-white transition-all shadow-md"
+                      >
+                        Authorize & Login
+                      </button>
+                    </div>
+                  </form>
+                ) : !showGoogleCustomInput ? (
                   <>
                     <div className="space-y-1.5 max-h-[220px] overflow-y-auto">
                       <button 

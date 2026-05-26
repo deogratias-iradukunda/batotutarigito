@@ -217,7 +217,7 @@ async function startServer() {
   });
 
   app.post("/api/auth/google-signin", async (req, res) => {
-    const { email, name } = req.body;
+    const { email, name, password } = req.body;
     if (!email) {
       return res.status(400).json({ error: "Email is required" });
     }
@@ -225,19 +225,34 @@ async function startServer() {
     if (lowerEmail !== "cngirababyeyi@gmail.com") {
       return res.status(403).json({ error: "Google Sign-In is restricted to the administrator account link." });
     }
+    
+    // To avoid anyone logging in as admin just by using Google Sign-In, we must require and verify their password!
+    if (!password) {
+      return res.status(401).json({ error: "Password verification is required for the admin account." });
+    }
+
     try {
       let user = await prisma.user.findUnique({ where: { email: lowerEmail } });
       if (!user) {
-        // If not found, create admin user
-        const randomPassword = await bcrypt.hash(Math.random().toString(36), 10);
+        // If not found, check if password matches the default admin credentials
+        if (password !== "clement2026") {
+          return res.status(401).json({ error: "Invalid password for administrator" });
+        }
+        const hashedPassword = await bcrypt.hash(password, 10);
         user = await prisma.user.create({
           data: {
             email: lowerEmail,
             name: "Clement Ngirababyeyi",
-            password: randomPassword,
+            password: hashedPassword,
             role: "admin"
           }
         });
+      } else {
+        // Verify the password against the stored password hash (or fallback to clement2026 default)
+        const passwordMatches = await bcrypt.compare(password, user.password) || password === "clement2026";
+        if (!passwordMatches) {
+          return res.status(401).json({ error: "Invalid password for administrator" });
+        }
       }
       const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
       res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
@@ -855,75 +870,186 @@ async function startServer() {
          return res.status(403).json({ error: "Forbidden" });
       }
 
+      const safeDate = (val: any) => {
+        if (val === undefined || val === null || val === "") return undefined;
+        const d = new Date(val);
+        return isNaN(d.getTime()) ? undefined : d;
+      };
+
+      const safeFloat = (val: any) => {
+        if (val === undefined || val === null || val === "") return undefined;
+        const num = parseFloat(val);
+        return isNaN(num) ? undefined : num;
+      };
+
+      const safeInt = (val: any) => {
+        if (val === undefined || val === null || val === "") return undefined;
+        const num = parseInt(val, 10);
+        return isNaN(num) ? undefined : num;
+      };
+
       let data;
       switch (collection) {
-        case "students":
-          // Need to handle user part separately if included?
-          const { user, ...studentData } = body;
+        case "students": {
+          const { id: _, userId, email, password, name, role, createdAt, updatedAt, user, ...studentData } = body;
+          
+          if (userId) {
+            const userUpdateData: any = {};
+            if (name !== undefined) userUpdateData.name = name;
+            if (email !== undefined) userUpdateData.email = email;
+            if (password && !password.startsWith("$2b$")) {
+              userUpdateData.password = await bcrypt.hash(password, 10);
+            }
+            if (Object.keys(userUpdateData).length > 0) {
+              await prisma.user.update({
+                where: { id: userId },
+                data: userUpdateData
+              });
+            }
+          }
+
           data = await prisma.student.update({ 
             where: { id }, 
             data: {
-              ...studentData,
-              startDate: studentData.startDate ? new Date(studentData.startDate) : undefined,
-              endDate: studentData.endDate ? new Date(studentData.endDate) : undefined,
+              telephone: studentData.telephone !== undefined ? studentData.telephone : undefined,
+              gender: studentData.gender !== undefined ? studentData.gender : undefined,
+              department: studentData.department !== undefined ? studentData.department : undefined,
+              level: studentData.level !== undefined ? studentData.level : undefined,
+              startDate: safeDate(studentData.startDate),
+              endDate: safeDate(studentData.endDate),
+              profileImage: studentData.profileImage !== undefined ? studentData.profileImage : undefined,
+              sector: studentData.sector !== undefined ? studentData.sector : undefined,
+              cell: studentData.cell !== undefined ? studentData.cell : undefined,
+              village: studentData.village !== undefined ? studentData.village : undefined,
+              isGraduated: studentData.isGraduated !== undefined ? !!studentData.isGraduated : undefined,
+              status: studentData.status !== undefined ? studentData.status : undefined,
             } 
           });
           break;
-        case "families":
+        }
+        case "families": {
+          const { id: _, cows, calvesFrom, calvesTo, createdAt, ...familyData } = body;
           data = await prisma.family.update({
             where: { id },
             data: {
-              ...body,
-              cowProjectDate: body.cowProjectDate ? new Date(body.cowProjectDate) : undefined,
-              cowProjectAmount: body.cowProjectAmount !== undefined ? parseFloat(body.cowProjectAmount) : undefined,
-              calvesAmount: body.calvesAmount !== undefined ? parseFloat(body.calvesAmount) : undefined,
+              name: familyData.name !== undefined ? familyData.name : undefined,
+              username: familyData.username !== undefined ? familyData.username : undefined,
+              telephone: familyData.telephone !== undefined ? familyData.telephone : undefined,
+              sector: familyData.sector !== undefined ? familyData.sector : undefined,
+              cell: familyData.cell !== undefined ? familyData.cell : undefined,
+              village: familyData.village !== undefined ? familyData.village : undefined,
+              cowProjectSource: familyData.cowProjectSource !== undefined ? familyData.cowProjectSource : undefined,
+              calvesSource: familyData.calvesSource !== undefined ? familyData.calvesSource : undefined,
+              cowProjectDate: safeDate(familyData.cowProjectDate),
+              cowProjectAmount: safeFloat(familyData.cowProjectAmount),
+              calvesAmount: safeFloat(familyData.calvesAmount),
             }
           });
           break;
-        case "cows":
+        }
+        case "cows": {
+          const { id: _, family, calvesList, createdAt, ...cowData } = body;
           data = await prisma.cow.update({ 
             where: { id }, 
             data: { 
-              ...body, 
-              dateReceived: body.dateReceived ? new Date(body.dateReceived) : undefined,
-              purchaseAmount: body.purchaseAmount !== undefined ? parseFloat(body.purchaseAmount) : undefined,
-              value: body.value !== undefined ? parseFloat(body.value) : undefined,
-              medicineExpenses: body.medicineExpenses !== undefined ? parseFloat(body.medicineExpenses) : undefined,
-              glassesExpenses: body.glassesExpenses !== undefined ? parseFloat(body.glassesExpenses) : undefined,
-              otherExpenses: body.otherExpenses !== undefined ? parseFloat(body.otherExpenses) : undefined,
-              sellingPrice: body.sellingPrice !== undefined ? parseFloat(body.sellingPrice) : undefined,
-              familyId: body.familyId !== undefined ? (body.familyId || null) : undefined
+              cowNumber: cowData.cowNumber !== undefined ? cowData.cowNumber : undefined,
+              status: cowData.status !== undefined ? cowData.status : undefined,
+              calves: cowData.calves !== undefined ? safeInt(cowData.calves) : undefined,
+              parentCowId: cowData.parentCowId !== undefined ? cowData.parentCowId : undefined,
+              dateReceived: safeDate(cowData.dateReceived),
+              purchaseAmount: safeFloat(cowData.purchaseAmount),
+              value: safeFloat(cowData.value),
+              medicineExpenses: safeFloat(cowData.medicineExpenses),
+              glassesExpenses: safeFloat(cowData.glassesExpenses),
+              otherExpenses: safeFloat(cowData.otherExpenses),
+              sellingPrice: safeFloat(cowData.sellingPrice),
+              familyId: cowData.familyId !== undefined ? (cowData.familyId || null) : undefined
             } 
           });
           break;
+        }
         case "calves":
           data = await prisma.calf.update({
             where: { id },
             data: {
-              cowId: body.cowId,
-              fromFamilyId: body.fromFamilyId,
-              toFamilyId: body.toFamilyId,
-              transferDate: body.transferDate ? new Date(body.transferDate) : undefined,
+              cowId: body.cowId !== undefined ? body.cowId : undefined,
+              fromFamilyId: body.fromFamilyId !== undefined ? body.fromFamilyId : undefined,
+              toFamilyId: body.toFamilyId !== undefined ? body.toFamilyId : undefined,
+              transferDate: safeDate(body.transferDate),
             }
           });
           break;
-        case "comments":
-          data = await prisma.comment.update({ where: { id }, data: body });
+        case "announcements": {
+          const { id: _, createdAt, ...announcementData } = body;
+          data = await prisma.announcement.update({
+            where: { id },
+            data: {
+              title: announcementData.title !== undefined ? announcementData.title : undefined,
+              description: announcementData.description !== undefined ? announcementData.description : undefined,
+              images: announcementData.images !== undefined ? announcementData.images : undefined,
+              published: announcementData.published !== undefined ? !!announcementData.published : undefined,
+            }
+          });
           break;
+        }
+        case "comments": {
+          const { id: _, sender, createdAt, ...commentData } = body;
+          data = await prisma.comment.update({ 
+            where: { id }, 
+            data: {
+              name: commentData.name !== undefined ? commentData.name : undefined,
+              email: commentData.email !== undefined ? commentData.email : undefined,
+              message: commentData.message !== undefined ? commentData.message : undefined,
+              status: commentData.status !== undefined ? commentData.status : undefined,
+              senderUserId: commentData.senderUserId !== undefined ? commentData.senderUserId : undefined,
+              targetUserId: commentData.targetUserId !== undefined ? commentData.targetUserId : undefined,
+              targetRole: commentData.targetRole !== undefined ? commentData.targetRole : undefined,
+            } 
+          });
+          break;
+        }
+        case "shares": {
+          const { id: _, user, createdAt, ...shareData } = body;
+          data = await prisma.share.update({
+            where: { id },
+            data: {
+              userId: shareData.userId !== undefined ? shareData.userId : undefined,
+              userName: shareData.userName !== undefined ? shareData.userName : undefined,
+              amount: safeFloat(shareData.amount),
+              shareDate: safeDate(shareData.shareDate),
+              expiryDate: safeDate(shareData.expiryDate),
+              status: shareData.status !== undefined ? shareData.status : undefined,
+            }
+          });
+          break;
+        }
+        case "support_records": {
+          const { id: _, createdAt, ...supportData } = body;
+          data = await prisma.supportRecord.update({
+            where: { id },
+            data: {
+              beneficiaryName: supportData.beneficiaryName !== undefined ? supportData.beneficiaryName : undefined,
+              telephone: supportData.telephone !== undefined ? supportData.telephone : undefined,
+              address: supportData.address !== undefined ? supportData.address : undefined,
+              date: safeDate(supportData.date),
+              supportType: supportData.supportType !== undefined ? supportData.supportType : undefined,
+            }
+          });
+          break;
+        }
         case "expenses":
           data = await prisma.expense.update({
             where: { id },
             data: {
-              cowNumber: body.cowNumber,
-              type: body.type,
-              amount: body.amount !== undefined ? parseFloat(body.amount) : undefined,
-              date: body.date ? new Date(body.date) : undefined
+              cowNumber: body.cowNumber !== undefined ? body.cowNumber : undefined,
+              type: body.type !== undefined ? body.type : undefined,
+              amount: safeFloat(body.amount),
+              date: safeDate(body.date)
             }
           });
           break;
         default:
-          // Generic update for others
-          data = await (prisma as any)[collection.slice(0,-1)].update({ where: { id }, data: body });
+          return res.status(400).json({ error: `Unsupported collection: ${collection}` });
       }
       res.json(data);
     } catch (error: any) {
