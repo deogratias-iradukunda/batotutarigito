@@ -42,7 +42,7 @@ export const About: React.FC = () => {
     { name: "Joshua Uwizeyimana", role: "System Analyst & Lead Planner" },
     { name: "Deogratias Iradukunda", role: "Software Architect & Manager" },
     { name: "Arcene Irakoze", role: "NGO Operations Developer" },
-    { name: "Christine Ngirababyeyi", role: "Lead Coordinator - Rwanda" }
+    { name: "Clement Ngirababyeyi", role: "Lead Coordinator - Rwanda" }
   ];
 
   return (
