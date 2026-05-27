@@ -1,14 +1,9 @@
 import axios from 'axios';
 
-const isLocalOrPreview = 
-  typeof window !== 'undefined' && (
-    window.location.hostname === 'localhost' || 
-    window.location.hostname === '127.0.0.1' || 
-    window.location.hostname.includes('europe-west2.run.app')
-  );
+const isLocalOrPreview = true;
 
 const api = axios.create({
-  baseURL: isLocalOrPreview ? '/' : 'https://ais-pre-7k27idlqiut6loyap6cijp-722419689013.europe-west2.run.app',
+  baseURL: '/',
 });
 
 api.interceptors.request.use((config) => {

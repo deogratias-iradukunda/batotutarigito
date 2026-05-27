@@ -6,9 +6,6 @@
       "destination": "https://ais-pre-7k27idlqiut6loyap6cijp-722419689013.europe-west2.run.app/api/:path*"
     },
     {
-      "handle": "filesystem"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
