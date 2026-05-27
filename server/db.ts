@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-// Enforce robust fallbacks globally for DATABASE_URL before importing Prisma or constructing the pool
+// Enforce robust fallbacks globally for DATABASE_URL before importing Prisma or constructing the client
 const DEFAULT_DATABASE_URL = "postgresql://neondb_owner:npg_Q4ndeTNYkoI5@ep-orange-fog-aptfp96g-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
 if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = DEFAULT_DATABASE_URL;
@@ -31,7 +31,7 @@ if (!connectionString || connectionString.trim() === "" || connectionString.incl
     });
     const adapter = new PrismaPg(pool);
     prisma = new PrismaClient({ adapter });
-    console.log("⚡ successfully initialized PostgreSQL Prisma connection pool.");
+    console.log("⚡ successfully initialized PostgreSQL Prisma connection pool using adapter.");
   } catch (error) {
     console.error("❌ Failed to initialize Prisma PostgreSQL client. Falling back to in-memory mock database:", error);
     isMock = true;
