@@ -71,7 +71,8 @@ export const Login: React.FC = () => {
       setGoogleEmailToVerify("");
       navigate(from, { replace: true });
     } catch (error: any) {
-      const errorMsg = error.response?.data?.error || error.message || "Google single sign-on failed";
+      const rawError = error.response?.data?.error || error.message || "Google single sign-on failed";
+      const errorMsg = typeof rawError === 'object' ? (rawError.message || JSON.stringify(rawError)) : rawError;
       toast.error(errorMsg);
     } finally {
       setGoogleLoading(false);
@@ -88,7 +89,8 @@ export const Login: React.FC = () => {
       login(token, user);
       navigate(from, { replace: true });
     } catch (error: any) {
-      const errorMsg = error.response?.data?.error || error.message || "Failed to login";
+      const rawError = error.response?.data?.error || error.message || "Failed to login";
+      const errorMsg = typeof rawError === 'object' ? (rawError.message || JSON.stringify(rawError)) : rawError;
       toast.error(errorMsg);
     } finally {
       setLoading(false);

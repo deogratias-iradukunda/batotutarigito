@@ -1,8 +1,17 @@
 import { Message, Role } from "../types";
 
+const isLocalOrPreview = 
+  typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' || 
+    window.location.hostname === '127.0.0.1' || 
+    window.location.hostname.includes('europe-west2.run.app')
+  );
+
+const API_ROOT = isLocalOrPreview ? '' : 'https://ais-pre-7k27idlqiut6loyap6cijp-722419689013.europe-west2.run.app';
+
 export async function sendMessage(history: Message[], message: string) {
   try {
-    const response = await fetch('/api/chat', {
+    const response = await fetch(`${API_ROOT}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ history, message })
@@ -28,7 +37,7 @@ export class GeminiError extends Error {
 
 export async function* sendMessageStream(history: Message[], message: string) {
   try {
-    const response = await fetch('/api/chat', {
+    const response = await fetch(`${API_ROOT}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ history, message })
@@ -36,7 +45,9 @@ export async function* sendMessageStream(history: Message[], message: string) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      const rawError = errorData.error || `HTTP error! status: ${response.status}`;
+      const resolvedMessage = typeof rawError === 'object' ? (rawError.message || JSON.stringify(rawError)) : rawError;
+      throw new Error(resolvedMessage);
     }
 
     const reader = response.body?.getReader();

@@ -6,7 +6,7 @@ import pg from "pg";
 import bcrypt from "bcryptjs";
 
 // Check if DATABASE_URL is configured
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_Q4ndeTNYkoI5@ep-orange-fog-aptfp96g-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
 
 let prisma: any;
 let isMock = false;

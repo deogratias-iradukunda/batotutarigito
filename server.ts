@@ -1,6 +1,32 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+// Apply robust fallback values for all environmental configurations
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = "sdkjfh8734hdfh87df87hdf87hdf";
+}
+if (!process.env.EMAIL_USER) {
+  process.env.EMAIL_USER = "iradukundadeogratias33@gmail.com";
+}
+if (!process.env.EMAIL_PASS) {
+  process.env.EMAIL_PASS = "zvrx bkff uzxa qpbu";
+}
+if (!process.env.ADMIN_EMAIL) {
+  process.env.ADMIN_EMAIL = "iradukundadeogratias33@gmail.com";
+}
+if (!process.env.CLOUDINARY_CLOUD_NAME) {
+  process.env.CLOUDINARY_CLOUD_NAME = "deze9srnj";
+}
+if (!process.env.CLOUDINARY_API_KEY) {
+  process.env.CLOUDINARY_API_KEY = "853965934522961";
+}
+if (!process.env.CLOUDINARY_API_SECRET) {
+  process.env.CLOUDINARY_API_SECRET = "UnwZLm8SDyiSE2EaFaLfWjlg1NM";
+}
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = "postgresql://neondb_owner:npg_Q4ndeTNYkoI5@ep-orange-fog-aptfp96g-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+}
+
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
@@ -38,6 +64,274 @@ async function startServer() {
     try {
       await prisma.user.findFirst();
       console.log("✅ Verified PostgreSQL database active and tables are fully initialized.");
+
+      // Perform elegant auto-seeding if the real PostgreSQL database contains 0 users
+      const userCount = await prisma.user.count();
+      if (userCount === 0) {
+        console.log("🌱 PostgreSQL database is empty. Performing automatic sync of default admins, students, cows, etc...");
+        // 1. Create Users
+        const hp = bcrypt.hashSync("admin123", 10);
+        const users = [
+          {
+            id: "u-admin-1",
+            email: "admin@batotutarigito.org",
+            password: hp,
+            name: "System Administrator",
+            role: "admin"
+          },
+          {
+            id: "u-admin-2",
+            email: "munyeshuriolivier6@gmail.com",
+            password: hp,
+            name: "Olivier Munyeshuri",
+            role: "admin"
+          },
+          {
+            id: "u-admin-3",
+            email: "iradukundadeogratias33@gmail.com",
+            password: hp,
+            name: "Deogratias Iradukunda",
+            role: "admin"
+          },
+          {
+            id: "u-student-1",
+            email: "jean@batotutarigito.org",
+            password: hp,
+            name: "Jean de Dieu Niyomugabo",
+            role: "student"
+          },
+          {
+            id: "u-student-2",
+            email: "claire@batotutarigito.org",
+            password: hp,
+            name: "Marie Claire Uwase",
+            role: "student"
+          }
+        ];
+
+        for (const u of users) {
+          await prisma.user.create({ data: u });
+        }
+
+        // 2. Create Students
+        const students = [
+          {
+            id: "s-student-1",
+            userId: "u-student-1",
+            telephone: "+250 788 123 456",
+            gender: "Male",
+            department: "Computer Science",
+            level: "Level 4",
+            startDate: new Date("2023-09-01"),
+            profileImage: "/admin.webp",
+            sector: "Rubengera",
+            cell: "Gisiza",
+            village: "Kigarama",
+            isGraduated: false,
+            status: "active"
+          },
+          {
+            id: "s-student-2",
+            userId: "u-student-2",
+            telephone: "+250 788 654 321",
+            gender: "Female",
+            department: "Nursing",
+            level: "Level 2",
+            startDate: new Date("2024-01-15"),
+            profileImage: "/gufasha.webp",
+            sector: "Bwishyura",
+            cell: "Kibuye",
+            village: "Ruganda",
+            isGraduated: false,
+            status: "active"
+          }
+        ];
+        
+        for (const s of students) {
+          await prisma.student.create({ data: s });
+        }
+
+        // 3. Create Families
+        const families = [
+          {
+            id: "f-family-1",
+            name: "Nsengimana Emmanuel Family",
+            username: "nsengimana_fam",
+            telephone: "+250 785 111 222",
+            sector: "Rubengera",
+            cell: "Gisiza",
+            village: "Isangano",
+            cowProjectSource: "BatoTutariGito Fund",
+            cowProjectDate: new Date("2024-02-14"),
+            cowProjectAmount: 350000,
+            calvesSource: "Firstborn Calf Pass",
+            calvesAmount: 0
+          },
+          {
+            id: "f-family-2",
+            name: "Mukamana Solange Family",
+            username: "mukamana_fam",
+            telephone: "+250 783 333 444",
+            sector: "Murundi",
+            cell: "Kamegeri",
+            village: "Urumuri",
+            cowProjectSource: "Pass on the Gift Program",
+            cowProjectDate: new Date("2024-06-12"),
+            cowProjectAmount: 320000,
+            calvesSource: "Direct Project Allocation",
+            calvesAmount: 1
+          }
+        ];
+
+        for (const f of families) {
+          await prisma.family.create({ data: f });
+        }
+
+        // 4. Create Cows
+        const cows = [
+          {
+            id: "c-cow-1",
+            cowNumber: "COW-B001",
+            dateReceived: new Date("2024-01-10"),
+            purchaseAmount: 350000,
+            calves: 1,
+            value: 410000,
+            medicineExpenses: 12000,
+            glassesExpenses: 0,
+            otherExpenses: 5000,
+            status: "active",
+            sellingPrice: 0,
+            familyId: "f-family-1"
+          },
+          {
+            id: "c-cow-2",
+            cowNumber: "COW-B002",
+            dateReceived: new Date("2024-03-22"),
+            purchaseAmount: 320000,
+            calves: 0,
+            value: 360000,
+            medicineExpenses: 4000,
+            glassesExpenses: 0,
+            otherExpenses: 2000,
+            status: "active",
+            sellingPrice: 0,
+            familyId: "f-family-2"
+          }
+        ];
+
+        for (const c of cows) {
+          await prisma.cow.create({ data: c });
+        }
+
+        // 5. Create Calves
+        const calves = [
+          {
+            id: "calf-1",
+            cowId: "c-cow-1",
+            fromFamilyId: "f-family-1",
+            toFamilyId: "f-family-2",
+            transferDate: new Date("2025-05-18")
+          }
+        ];
+
+        for (const cl of calves) {
+          await prisma.calf.create({ data: cl });
+        }
+
+        // 6. Create Announcements
+        const announcements = [
+          {
+            id: "a-ann-1",
+            title: "Pass on the Gift Call to Families",
+            description: "We are pleased to celebrate Mukamana Family for passing on their first-born calf to another beneficiary family under the Rubengera agricultural program.",
+            images: ["/cow2.webp"],
+            published: true,
+            createdAt: new Date("2026-05-15T10:00:00Z")
+          },
+          {
+            id: "a-ann-2",
+            title: "Community Umuganda Highlights",
+            description: "Over 200 members of Batotutarigito youth groups joined hands with the local Rubengera leadership to construct primary school pathways and agricultural ridges.",
+            images: ["/umuganda.webp"],
+            published: true,
+            createdAt: new Date("2026-05-10T08:30:00Z")
+          },
+          {
+            id: "a-ann-3",
+            title: "New Student Academic Progress Review",
+            description: "Our quarterly sponsorship evaluation reports that 95% of sponsored primary and secondary students achieved passing marks, with 12 students joining university classes.",
+            images: ["/gufasha2.webp"],
+            published: true,
+            createdAt: new Date("2026-05-01T14:00:00Z")
+          }
+        ];
+
+        for (const a of announcements) {
+          await prisma.announcement.create({ data: a });
+        }
+
+        // 7. Create Support Records
+        const supportRecords = [
+          {
+            id: "sr-1",
+            beneficiaryName: "Gahigi Family",
+            telephone: "+250 782 555 444",
+            address: "Rubengera Cell, Rubengera Sector",
+            date: new Date("2025-02-01"),
+            supportType: "Livestock Feed Provision"
+          }
+        ];
+
+        for (const sr of supportRecords) {
+          await prisma.supportRecord.create({ data: sr });
+        }
+
+        // 8. Create Expenses
+        const expenses = [
+          {
+            id: "exp-1",
+            cowNumber: "COW-B001",
+            type: "medicines",
+            amount: 12000,
+            date: new Date("2025-05-10")
+          },
+          {
+            id: "exp-2",
+            cowNumber: "COW-B002",
+            type: "foods",
+            amount: 25000,
+            date: new Date("2025-05-12")
+          },
+          {
+            id: "exp-3",
+            cowNumber: "COW-B001",
+            type: "vet",
+            amount: 15000,
+            date: new Date("2025-05-14")
+          }
+        ];
+
+        for (const e of expenses) {
+          await prisma.expense.create({ data: e });
+        }
+
+        // 9. Create Comments
+        const comments = [
+          {
+            id: "cm-1",
+            name: "Habimana Jean",
+            email: "habimana@gmail.com",
+            message: "Please let us know how family sponsors can transfer cow treatment certificates.",
+            status: "pending"
+          }
+        ];
+
+        for (const cm of comments) {
+          await prisma.comment.create({ data: cm });
+        }
+
+        console.log("🌱 Automatic sync and database seeding is complete!");
+      }
     } catch (error: any) {
       console.warn("⚠️ PostgreSQL db test query failed. Automatically falling back to robust in-memory mock database for 100% platform uptime. Info:", error?.message || error);
       setUseMockDb(true);
@@ -45,6 +339,19 @@ async function startServer() {
   }
 
   app.use(express.json());
+
+  // Enable CORS for external client applications like Vercel deployments
+  app.use((req, res, next) => {
+    const origin = req.headers.origin || "*";
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(200);
+    }
+    next();
+  });
 
   // --- Auth Middlewares ---
 
