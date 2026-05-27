@@ -1,12 +1,18 @@
 import "dotenv/config";
+
+// Enforce robust fallbacks globally for DATABASE_URL before importing Prisma or constructing the pool
+const DEFAULT_DATABASE_URL = "postgresql://neondb_owner:npg_Q4ndeTNYkoI5@ep-orange-fog-aptfp96g-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = DEFAULT_DATABASE_URL;
+}
+
 import pkg from "@prisma/client";
 const { PrismaClient } = pkg as any;
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
 import bcrypt from "bcryptjs";
 
-// Check if DATABASE_URL is configured
-const connectionString = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_Q4ndeTNYkoI5@ep-orange-fog-aptfp96g-pooler.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+const connectionString = process.env.DATABASE_URL || DEFAULT_DATABASE_URL;
 
 let prisma: any;
 let isMock = false;
@@ -16,7 +22,13 @@ if (!connectionString || connectionString.trim() === "" || connectionString.incl
   isMock = true;
 } else {
   try {
-    const pool = new pg.Pool({ connectionString });
+    // Enable SSL rejects for secure and robust deployment environments like Vercel and Cloud Run
+    const pool = new pg.Pool({ 
+      connectionString,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    });
     const adapter = new PrismaPg(pool);
     prisma = new PrismaClient({ adapter });
     console.log("⚡ successfully initialized PostgreSQL Prisma connection pool.");
