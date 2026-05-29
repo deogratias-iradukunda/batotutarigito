@@ -9,9 +9,11 @@ export const About: React.FC = () => {
     "@context": "https://schema.org",
     "@type": "AboutPage",
     "mainEntity": {
-      "@type": "NGO",
-      "name": "BatoTutariGito",
-      "description": "BatoTutariGito NGO works towards community development, student education, and agricultural empowerment in Rwanda."
+      "@type": "Organization",
+      "name": "Batotutarigito",
+      "url": "https://batotutarigito.vercel.app",
+      "logo": "https://batotutarigito.vercel.app/logo.png",
+      "description": "Batotutarigito works towards community development, student education, and agricultural empowerment in Rubengera, Karongi District, Rwanda."
     }
   };
 
@@ -48,9 +50,10 @@ export const About: React.FC = () => {
   return (
     <div className="bg-slate-50 dark:bg-slate-950 min-h-screen">
       <SEO 
-        title="About Us - Mission & Core Values"
-        description="Learn about BatoTutariGito's background, dedicated staff, mission values, and the real impact of our local development initiatives in Rwanda."
-        keywords="BatoTutariGito details, Rwanda NGO, NGO mission, cow distribution rules, sponsore students"
+        title="About Batotutarigito - Karongi Community Support Rwanda"
+        description="Discover the mission, core values, and dedicated team of Batotutarigito in Rubengera, Karongi District, Rwanda. Learn about our impactful cow donation program and student sponsorships."
+        keywords="About Batotutarigito, Batotutarigito Rwanda, Community Support Rwanda, Cow Donation Program Rwanda, Karongi Community Support, Rubengera community project, family support Rwanda, NGO Rwanda, Western Province Rwanda"
+        canonicalUrl="https://batotutarigito.vercel.app/about"
         schemaData={aboutSchema}
       />
       {/* Hero Banner Section */}

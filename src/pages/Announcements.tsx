@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Search, Calendar, ChevronRight, ArrowLeft, Image as ImageIcon, X, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import api from "../lib/api";
+import { SEO } from "../components/SEO";
 
 interface Announcement {
   id: string;
@@ -44,8 +45,27 @@ export const Announcements: React.FC = () => {
     ann.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const announcementsSchema = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Batotutarigito Announcements & Stories",
+    "description": "Latest announcements and success stories of the Batotutarigito in Karongi, Rwanda, detailing cow distributions and calf updates.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Batotutarigito",
+      "url": "https://batotutarigito.vercel.app"
+    }
+  };
+
   return (
     <div className="bg-slate-50 dark:bg-slate-950 min-h-screen py-12 px-6">
+      <SEO 
+        title="Announcements & Stories - Live Community Updates"
+        description="Stay updated with the latest community actions, cow donation statistics, calf track records, and family news from Batotutarigito in Karongi, Rwanda."
+        keywords="Batotutarigito announcements, Batotutarigito Rwanda, Community Support Rwanda, Cow Donation Program Rwanda, Karongi Community Support, Rubengera community updates"
+        canonicalUrl="https://batotutarigito.vercel.app/announcements"
+        schemaData={announcementsSchema}
+      />
       <div className="max-w-7xl mx-auto space-y-12">
         {/* Breadcrumb & Header */}
         <div className="space-y-4">

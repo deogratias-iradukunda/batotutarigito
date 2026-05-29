@@ -1,0 +1,18 @@
+{
+  "short_name": "Batotutarigito",
+  "name": "Batotutarigito Rwanda",
+  "description": "Batotutarigito is a Rwanda community support platform located in Rubengera, Karongi District, Western Province, helping families through cow donation projects, calf tracking, and community support services.",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#2563eb"
+}

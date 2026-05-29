@@ -237,30 +237,26 @@ export const Home: React.FC = () => {
 
   const homeSchema = {
     "@context": "https://schema.org",
-    "@type": "NGO",
-    "name": "BatoTutariGito",
-    "url": typeof window !== "undefined" ? window.location.origin : "https://batotutarigito.org",
-    "logo": typeof window !== "undefined" ? `${window.location.origin}/logo.png` : "https://batotutarigito.org/logo.png",
-    "description": "BatoTutariGito is a non-governmental organization driving student sponsorships, cow distribution, and sustainable agriculture in Rwanda.",
+    "@type": "Organization",
+    "name": "Batotutarigito",
+    "url": "https://batotutarigito.vercel.app",
+    "logo": "https://batotutarigito.vercel.app/logo.png",
+    "description": "Batotutarigito is a Rwanda community support platform helping families through cow donation projects and social support programs.",
     "address": {
       "@type": "PostalAddress",
-      "addressLocality": "Rubengera, Karongi District",
+      "addressLocality": "Rubengera",
       "addressRegion": "Western Province",
       "addressCountry": "Rwanda"
-    },
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "email": "cngirababyeyi@gmail.com",
-      "contactType": "customer support"
     }
   };
 
   return (
     <div className="overflow-hidden bg-slate-50 dark:bg-slate-950">
       <SEO 
-        title="Home - Community Empowerment & NGO"
-        description="Official homepage of BatoTutariGito NGO, driving student sponsorship programs, family cow distributions, and community development projects in Karongi District, Rwanda."
-        keywords="BatoTutariGito, Rwanda NGO, community empower, cow project, student sponsorship, education support"
+        title="Batotutarigito Rwanda - Community Support & Cow Donation Program"
+        description="Batotutarigito is a Rwanda community support platform located in Rubengera, Karongi District, Western Province, helping families through cow donation projects, calf tracking, and community support services."
+        keywords="Batotutarigito, Batotutarigito Rwanda, Community Support Rwanda, Cow Donation Program Rwanda, Karongi Community Support, Rubengera community support, cow donation Rwanda, calves tracking, family support Rwanda, Western Province, NGO Rwanda"
+        canonicalUrl="https://batotutarigito.vercel.app"
         schemaData={homeSchema}
       />
       

@@ -16,13 +16,15 @@ export const Contact: React.FC = () => {
     "@context": "https://schema.org",
     "@type": "ContactPage",
     "mainEntity": {
-      "@type": "NGO",
-      "name": "BatoTutariGito",
+      "@type": "Organization",
+      "name": "Batotutarigito",
+      "url": "https://batotutarigito.vercel.app",
+      "logo": "https://batotutarigito.vercel.app/logo.png",
       "telephone": "+250 788 123 456",
       "email": "cngirababyeyi@gmail.com",
       "address": {
         "@type": "PostalAddress",
-        "addressLocality": "Rubengera, Karongi District",
+        "addressLocality": "Rubengera",
         "addressRegion": "Western Province",
         "addressCountry": "Rwanda"
       }
@@ -62,9 +64,10 @@ export const Contact: React.FC = () => {
   return (
     <div className="bg-slate-50 dark:bg-slate-950 min-h-screen py-16 px-6">
       <SEO 
-        title="Contact Us - Interactive Message Board"
-        description="Reach out to BatoTutariGito NGO's leadership and administrator. Fill out our contact form or find our office location and coordinates in Karongi, Rwanda."
-        keywords="Contact BatoTutariGito, Rwanda NGO address, Clement Ngirababyeyi phone, contact office Karongi"
+        title="Contact Batotutarigito - Karongi & Rubengera Rwanda"
+        description="Get in touch with Batotutarigito in Rubengera, Karongi District, Western Province, Rwanda. Reach out regarding cow donation programs, calf tracking, or community support initiatives."
+        keywords="Contact Batotutarigito, Batotutarigito Rwanda, Community Support Rwanda, Cow Donation Program Rwanda, Karongi Community Support, Rubengera community support, cow donation Rwanda, calves tracking, family support Rwanda, Western Province, NGO Rwanda"
+        canonicalUrl="https://batotutarigito.vercel.app/contact"
         schemaData={contactSchema}
       />
       <div className="max-w-7xl mx-auto space-y-16">

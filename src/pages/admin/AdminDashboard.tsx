@@ -6,7 +6,7 @@ import {
   Users, Milk, Heart, TrendingUp, Plus, Search, Filter, Edit, Trash2, 
   Calendar, MapPin, GraduationCap, Upload, Download, Eye,
   BarChart3, MessageSquare, Megaphone, Loader2, X, CheckCircle2, AlertCircle, Coins,
-  Mail, Lock
+  Mail, Lock, Settings
 } from "lucide-react";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -170,6 +170,7 @@ export const AdminDashboard: React.FC = () => {
     },
     { id: "shares", label: "Shares", icon: <Coins size={20} /> },
     { id: "expenses", label: "Expenses", icon: <Coins size={20} /> },
+    { id: "settings", label: "Settings", icon: <Settings size={20} /> },
   ];
 
   if (loading) return (
@@ -200,27 +201,31 @@ export const AdminDashboard: React.FC = () => {
       <main className="flex-1 p-6 md:p-10">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white capitalize">{activeTab}</h1>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white capitalize">
+              {activeTab === "settings" ? "Account Settings" : activeTab}
+            </h1>
             <p className="text-slate-500 dark:text-slate-400">Welcome back, Administrator</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input 
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                placeholder="Search anything..." 
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600 w-64 text-slate-900 dark:text-white font-medium"
-              />
+          {activeTab !== "settings" && (
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  placeholder="Search anything..." 
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-600 w-64 text-slate-900 dark:text-white font-medium"
+                />
+              </div>
+              <button 
+                 onClick={() => { setSelectedItem(null); setIsModalOpen(true); }}
+                 className="bg-blue-600 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-lg hover:bg-blue-700 transition-all flex items-center gap-2"
+              >
+                <Plus size={18} />
+                Add New
+              </button>
             </div>
-            <button 
-               onClick={() => { setSelectedItem(null); setIsModalOpen(true); }}
-               className="bg-blue-600 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-lg hover:bg-blue-700 transition-all flex items-center gap-2"
-            >
-              <Plus size={18} />
-              Add New
-            </button>
-          </div>
+          )}
         </header>
 
         {activeTab === "overview" && <Overview data={data} />}
@@ -322,6 +327,9 @@ export const AdminDashboard: React.FC = () => {
             onEdit={(exp: any) => { setSelectedItem(exp); setIsModalOpen(true); }}
             onDelete={(id: string) => handleDelete("expenses", id)}
           />
+        )}
+        {activeTab === "settings" && (
+          <SettingsPanel onPasswordChanged={fetchData} />
         )}
       </main>
 
@@ -442,6 +450,117 @@ const Overview = ({ data }: any) => {
             Tracking animal medicine and glasses expenses continuously calculates exact profit & loss margins across your cattle operations.
           </p>
         </div>
+      </div>
+    </div>
+  );
+};
+
+interface SettingsPanelProps {
+  onPasswordChanged: () => void;
+}
+
+const SettingsPanel: React.FC<SettingsPanelProps> = ({ onPasswordChanged }) => {
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      return toast.error("New passwords do not match");
+    }
+    if (passwordForm.newPassword.length < 6) {
+      return toast.error("Password must be at least 6 characters");
+    }
+
+    setPasswordLoading(true);
+    try {
+      await api.post("/api/auth/change-password", {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword
+      });
+      toast.success("Password updated successfully!");
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      onPasswordChanged();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Failed to update password");
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  return (
+    <div className="premium-card p-6 md:p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl mx-auto shadow-sm">
+      <div className="space-y-6">
+        <div className="border-b border-slate-100 dark:border-slate-800/80 pb-4">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Lock className="text-blue-600" size={22} />
+            Change Password
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Update your administrator account password. Keep your login credentials secure.
+          </p>
+        </div>
+        <form onSubmit={handlePasswordChange} className="space-y-5">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              Current Password
+            </label>
+            <input 
+              type="password" 
+              required
+              value={passwordForm.currentPassword}
+              onChange={e => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white font-medium transition-all"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              New Password
+            </label>
+            <input 
+              type="password" 
+              required
+              value={passwordForm.newPassword}
+              onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white font-medium transition-all"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              Confirm New Password
+            </label>
+            <input 
+              type="password" 
+              required
+              value={passwordForm.confirmPassword}
+              onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white font-medium transition-all"
+            />
+          </div>
+          <div className="pt-4">
+            <button
+              type="submit"
+              disabled={passwordLoading}
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 dark:disabled:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+            >
+              {passwordLoading ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={18} />
+                  Save New Password
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
