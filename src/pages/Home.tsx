@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, ChevronRight, Heart, Users, Milk, Star, Mail, MapPin, Phone, ArrowRight, Settings, Plus, Trash2, Upload, X, Loader2, Maximize2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, Users, Milk, Star, Mail, MapPin, Phone, ArrowRight, Settings, Plus, Trash2, Upload, X, Loader2, Maximize2, Pencil } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import api from "../lib/api";
@@ -36,10 +36,43 @@ export const Home: React.FC = () => {
     link: "/about"
   });
 
+  // Slider Edit / High Quality Mode states
+  const [addMode, setAddMode] = useState<"upload" | "url">("upload");
+  const [newSlideUrl, setNewSlideUrl] = useState("");
+  const [editingSlide, setEditingSlide] = useState<any | null>(null);
+  const [editMode, setEditMode] = useState<"upload" | "url">("upload");
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editSlideUrl, setEditSlideUrl] = useState("");
+  const [editSlideData, setEditSlideData] = useState({
+    title: "",
+    description: "",
+    cta: "Learn More",
+    link: "/about"
+  });
+
+  // Our Impact / Our Mission custom photo state and handlers
+  const [impactImage, setImpactImage] = useState("https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=85&w=2400");
+  const [impactUploadLoading, setImpactUploadLoading] = useState(false);
+  const [impactImageMode, setImpactImageMode] = useState<"upload" | "url">("upload");
+  const [impactImageUrl, setImpactImageUrl] = useState("");
+  const [impactImageFile, setImpactImageFile] = useState<File | null>(null);
+
+  const fetchImpactImage = async () => {
+    try {
+      const response = await api.get("/api/impact-image");
+      if (response.data && response.data.image) {
+        setImpactImage(response.data.image);
+        setImpactImageUrl(response.data.image);
+      }
+    } catch {
+      // Keep hardcoded fallback if API fails
+    }
+  };
+
   const defaultBanners = [
     {
       id: "1",
-      image: "/umuganda.webp",
+      image: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=85&w=2400",
       title: "Community Impact",
       description: "Working together to build a sustainable future for our community in Karongi.",
       cta: "Learn More",
@@ -47,7 +80,7 @@ export const Home: React.FC = () => {
     },
     {
       id: "2",
-      image: "/cow2.webp",
+      image: "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?auto=format&fit=crop&q=85&w=2400",
       title: "The Cow Project",
       description: "Providing nutrition and economic stability to families through cow sponsorship and distribution.",
       cta: "Support a Family",
@@ -55,7 +88,7 @@ export const Home: React.FC = () => {
     },
     {
       id: "3",
-      image: "/gufasha.webp",
+      image: "https://images.unsplash.com/photo-1531538606174-0f90ff5dce83?auto=format&fit=crop&q=85&w=2400",
       title: "Our Dedicated Staff",
       description: "Meet the passionate individuals working on the front lines to transform lives.",
       cta: "Meet the Team",
@@ -63,7 +96,7 @@ export const Home: React.FC = () => {
     },
     {
       id: "4",
-      image: "/gufasha2.webp",
+      image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=85&w=2400",
       title: "Student Sponsorship",
       description: "Empowering the next generation through education and long-term sponsorship programs.",
       cta: "Sponsor Now",
@@ -71,7 +104,7 @@ export const Home: React.FC = () => {
     },
     {
       id: "5",
-      image: "/kwibuka.webp",
+      image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=85&w=2400",
       title: "Preserving History",
       description: "Honoring our history while building a bright future for all members of our society.",
       cta: "Our History",
@@ -79,7 +112,7 @@ export const Home: React.FC = () => {
     },
     {
       id: "6",
-      image: "/admin.webp",
+      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=85&w=2400",
       title: "Leadership & Vision",
       description: "Guided by transparency and a commitment to serving those who need it most.",
       cta: "Contact Us",
@@ -87,7 +120,7 @@ export const Home: React.FC = () => {
     },
     {
       id: "7",
-      image: "/kuremera.webp",
+      image: "https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&q=85&w=2400",
       title: "Global Partnership",
       description: "Connecting supporters from around the world to local initiatives that matter.",
       cta: "Join Us",
@@ -112,6 +145,7 @@ export const Home: React.FC = () => {
 
   useEffect(() => {
     fetchBanners();
+    fetchImpactImage();
   }, []);
 
   useEffect(() => {
@@ -187,22 +221,36 @@ export const Home: React.FC = () => {
   // Slider image uploads
   const handleAddSlide = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!imageFile) {
-      toast.error("Please drag/select a homepage hero image file");
-      return;
+    let imageUrl = "";
+
+    if (addMode === "upload") {
+      if (!imageFile) {
+        toast.error("Please drag/select a homepage hero image file or choose to paste an HD image URL");
+        return;
+      }
+      setUploadLoading(true);
+      try {
+        const upData = new FormData();
+        upData.append("image", imageFile);
+        const uploadRes = await api.post("/api/upload", upData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        imageUrl = uploadRes.data.url;
+      } catch (err: any) {
+        toast.error(err.response?.data?.error || "Failed to upload image file");
+        setUploadLoading(false);
+        return;
+      }
+    } else {
+      if (!newSlideUrl.trim()) {
+        toast.error("Please enter a valid high-resolution image URL");
+        return;
+      }
+      imageUrl = newSlideUrl.trim();
     }
 
     setUploadLoading(true);
     try {
-      // 1. Upload slide to Cloudinary via Express proxy
-      const upData = new FormData();
-      upData.append("image", imageFile);
-      const uploadRes = await api.post("/api/upload", upData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-      const imageUrl = uploadRes.data.url;
-
-      // 2. Submit saved layout schema properties
       await api.post("/api/home-banners", {
         image: imageUrl,
         title: newSlideData.title,
@@ -213,10 +261,68 @@ export const Home: React.FC = () => {
 
       toast.success("New slideshow banner added successfully!");
       setImageFile(null);
+      setNewSlideUrl("");
       setNewSlideData({ title: "", description: "", cta: "Learn More", link: "/about" });
       fetchBanners();
     } catch (err: any) {
       toast.error(err.response?.data?.error || "Failed to setup homepage slider");
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const startEditing = (slide: any) => {
+    setEditingSlide(slide);
+    setEditSlideData({
+      title: slide.title,
+      description: slide.description,
+      cta: slide.cta || "Learn More",
+      link: slide.link || "/about"
+    });
+    setEditSlideUrl(slide.image);
+    setEditMode(slide.image.startsWith("http") ? "url" : "upload");
+    setEditImageFile(null);
+  };
+
+  const handleEditSlideSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSlide) return;
+
+    let imageUrl = editingSlide.image;
+
+    setUploadLoading(true);
+    try {
+      if (editMode === "upload" && editImageFile) {
+        const upData = new FormData();
+        upData.append("image", editImageFile);
+        const uploadRes = await api.post("/api/upload", upData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        imageUrl = uploadRes.data.url;
+      } else if (editMode === "url") {
+        if (!editSlideUrl.trim()) {
+          toast.error("Please enter a valid high-resolution image URL");
+          setUploadLoading(false);
+          return;
+        }
+        imageUrl = editSlideUrl.trim();
+      }
+
+      await api.put(`/api/home-banners/${editingSlide.id}`, {
+        image: imageUrl,
+        title: editSlideData.title,
+        description: editSlideData.description,
+        cta: editSlideData.cta,
+        link: editSlideData.link
+      });
+
+      toast.success("Slideshow banner updated successfully!");
+      setEditingSlide(null);
+      setEditImageFile(null);
+      setEditSlideUrl("");
+      fetchBanners();
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Failed to update slideshow banner");
     } finally {
       setUploadLoading(false);
     }
@@ -229,6 +335,44 @@ export const Home: React.FC = () => {
       fetchBanners();
     } catch (err: any) {
       toast.error("Unable to delete slider");
+    }
+  };
+
+  const handleUpdateImpactImage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    let imageUrl = "";
+
+    setImpactUploadLoading(true);
+    try {
+      if (impactImageMode === "upload") {
+        if (!impactImageFile) {
+          toast.error("Please drag/select an image file for the Our Impact section");
+          setImpactUploadLoading(false);
+          return;
+        }
+        const upData = new FormData();
+        upData.append("image", impactImageFile);
+        const uploadRes = await api.post("/api/upload", upData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        imageUrl = uploadRes.data.url;
+      } else {
+        if (!impactImageUrl.trim()) {
+          toast.error("Please enter a valid high-resolution image URL");
+          setImpactUploadLoading(false);
+          return;
+        }
+        imageUrl = impactImageUrl.trim();
+      }
+
+      await api.put("/api/impact-image", { image: imageUrl });
+      setImpactImage(imageUrl);
+      toast.success("Our Impact photo updated to full HD successfully!");
+      setImpactImageFile(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Failed to update Our Impact image");
+    } finally {
+      setImpactUploadLoading(false);
     }
   };
 
@@ -392,9 +536,9 @@ export const Home: React.FC = () => {
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
           <div className="lg:w-1/2">
             <img 
-              src="/kuremera.webp" 
+              src={impactImage} 
               alt="Our Impact" 
-              onClick={() => setLightboxImage("/kuremera.webp")}
+              onClick={() => setLightboxImage(impactImage)}
               className="rounded-3xl shadow-2xl w-full h-[500px] object-cover border border-slate-200 dark:border-slate-800 cursor-zoom-in transition-all duration-300 hover:scale-[1.01]"
               title="Click to view image in full width and height"
             />
@@ -637,118 +781,394 @@ export const Home: React.FC = () => {
                   <div className="space-y-2 max-h-48 overflow-y-auto border border-slate-100 dark:border-slate-800 rounded-2xl p-2 bg-slate-50/50 dark:bg-slate-900/50">
                     {activeSlides.map((slide, i) => (
                       <div key={slide.id || i} className="flex items-center justify-between gap-4 p-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
                           <img 
                             src={slide.image} 
                             alt={slide.title} 
-                            className="w-12 h-12 rounded-lg object-cover" 
+                            className="w-12 h-12 rounded-lg object-cover flex-shrink-0" 
                             referrerPolicy="no-referrer"
                           />
-                          <div>
-                            <p className="font-extrabold text-xs text-slate-900 dark:text-white">{slide.title}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-extrabold text-xs text-slate-900 dark:text-white truncate">{slide.title}</p>
                             <p className="text-[10px] text-slate-400 truncate max-w-xs">{slide.description}</p>
                           </div>
                         </div>
-                        {slide.id !== "1" && slide.id !== "2" && slide.id !== "5" && (
+                        <div className="flex items-center gap-1 flex-shrink-0">
                           <button 
-                            onClick={() => handleDeleteSlide(slide.id)}
-                            className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 p-2 rounded-xl transition-colors"
-                            title="Delete custom slides"
+                            type="button"
+                            onClick={() => startEditing(slide)}
+                            className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/25 p-2 rounded-xl transition-colors"
+                            title="Edit slide text and image"
                           >
-                            <Trash2 size={16} />
+                            <Pencil size={14} />
                           </button>
-                        )}
+                          <button 
+                            type="button"
+                            onClick={() => handleDeleteSlide(slide.id)}
+                            className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/25 p-2 rounded-xl transition-colors"
+                            title="Delete this slide"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* 2. Upload Add Slider Form */}
-                <form onSubmit={handleAddSlide} className="space-y-4 border-t border-slate-100 dark:border-slate-800 pt-6">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Upload New Slideshow Banner</h4>
-                  
-                  {/* Image input selector */}
-                  <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-600 rounded-2xl p-6 text-center transition-colors cursor-pointer relative bg-slate-50/20">
-                    <input 
-                      required
-                      type="file" 
-                      accept="image/*"
-                      onChange={e => setImageFile(e.target.files?.[0] || null)}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                    <div className="space-y-2 flex flex-col items-center justify-center text-slate-400">
-                      <Upload size={32} className="text-slate-400" />
-                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                        {imageFile ? `Selected: ${imageFile.name}` : "Select files or Drag and Drop Banner image"}
-                      </p>
-                      <p className="text-[10px]">Supports PNG, JPG, JPEG, WEBP up to 5MB</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Slide Headline Title</label>
-                      <input 
-                        required
-                        value={newSlideData.title}
-                        onChange={e => setNewSlideData({...newSlideData, title: e.target.value})}
-                        placeholder="E.g., EMPOWERING FAMILIES"
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Description message</label>
-                      <input 
-                        required
-                        value={newSlideData.description}
-                        onChange={e => setNewSlideData({...newSlideData, description: e.target.value})}
-                        placeholder="Explain slide's key action/program"
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Button CTA text</label>
-                      <input 
-                        required
-                        value={newSlideData.cta}
-                        onChange={e => setNewSlideData({...newSlideData, cta: e.target.value})}
-                        placeholder="E.g., Sponsor Cow"
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900 dark:text-white"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Button Target Route</label>
-                      <select 
-                        value={newSlideData.link}
-                        onChange={e => setNewSlideData({...newSlideData, link: e.target.value})}
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900 dark:text-white"
+                {/* 2. Slide Create / Edit Panel Form */}
+                {editingSlide ? (
+                  <form onSubmit={handleEditSlideSubmit} className="space-y-4 border-t border-slate-100 dark:border-slate-800 pt-6">
+                    <div className="flex justify-between items-center bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-2xl border border-blue-100 dark:border-blue-900/20">
+                      <div>
+                        <h4 className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider">Editing Slider Slide</h4>
+                        <p className="text-[10px] text-slate-400">Modifying: {editingSlide.title}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setEditingSlide(null)}
+                        className="text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold px-3 py-1.5 rounded-lg transition-colors"
                       >
-                        <option value="/">Home Dashboard</option>
-                        <option value="/about">About Us Page "/about"</option>
-                        <option value="/announcements">Announcements Page "/announcements"</option>
-                        <option value="/contact">Contact Page "/contact"</option>
-                        <option value="/login">Log-in Portal "/login"</option>
-                        <option value="/signup">Register Portal "/signup"</option>
-                      </select>
+                        Cancel Editing
+                      </button>
                     </div>
-                  </div>
 
-                  <button 
-                    disabled={uploadLoading}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors shadow-lg disabled:opacity-50 text-xs uppercase tracking-wider flex items-center justify-center gap-1.5"
-                  >
-                    {uploadLoading ? (
-                      <Loader2 className="animate-spin" size={16} />
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase block">IMAGE REPLACEMENT CONSTRAINTS (FOR MAX 4K/HD EXPOSURE)</label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditMode("upload")}
+                          className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-lg transition-colors border ${
+                            editMode === "upload"
+                              ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-750"
+                          }`}
+                        >
+                          Upload HD File
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditMode("url")}
+                          className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-lg transition-colors border ${
+                            editMode === "url"
+                              ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-750"
+                          }`}
+                        >
+                          Direct HD Image Link / URL (Recommended)
+                        </button>
+                      </div>
+                    </div>
+
+                    {editMode === "upload" ? (
+                      <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-600 rounded-2xl p-4 text-center transition-colors cursor-pointer relative bg-slate-50/20">
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={e => setEditImageFile(e.target.files?.[0] || null)}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                        <div className="space-y-1.5 flex flex-col items-center justify-center text-slate-400">
+                          <Upload size={24} className="text-slate-400" />
+                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                            {editImageFile ? `Selected: ${editImageFile.name}` : "Click/Drag to replace the current slide image"}
+                          </p>
+                          <p className="text-[9px]">Leave empty to keep utilizing the current image</p>
+                        </div>
+                      </div>
                     ) : (
-                      <>
-                        <Plus size={16} /> UPLOAD AND SAVE HERO SLIDE
-                      </>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Direct Image Link (Fully HD Uncompressed URL)</label>
+                        <input
+                          type="url"
+                          required
+                          value={editSlideUrl}
+                          onChange={e => setEditSlideUrl(e.target.value)}
+                          placeholder="E.g., https://images.unsplash.com/photo-...&q=85&w=2400"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-600"
+                        />
+                        <p className="text-[9px] text-slate-400">You can paste any direct high-definition web link to display it flawlessly without compression.</p>
+                      </div>
                     )}
-                  </button>
-                </form>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Slide Headline Title</label>
+                        <input 
+                          required
+                          value={editSlideData.title}
+                          onChange={e => setEditSlideData({...editSlideData, title: e.target.value})}
+                          placeholder="Headline"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Description message</label>
+                        <input 
+                          required
+                          value={editSlideData.description}
+                          onChange={e => setEditSlideData({...editSlideData, description: e.target.value})}
+                          placeholder="Description"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Button CTA text</label>
+                        <input 
+                          required
+                          value={editSlideData.cta}
+                          onChange={e => setEditSlideData({...editSlideData, cta: e.target.value})}
+                          placeholder="CTA text"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Button Target Route</label>
+                        <select 
+                          value={editSlideData.link}
+                          onChange={e => setEditSlideData({...editSlideData, link: e.target.value})}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900 dark:text-white"
+                        >
+                          <option value="/">Home Dashboard</option>
+                          <option value="/about">About Us Page "/about"</option>
+                          <option value="/announcements">Announcements Page "/announcements"</option>
+                          <option value="/contact">Contact Page "/contact"</option>
+                          <option value="/login">Log-in Portal "/login"</option>
+                          <option value="/signup">Register Portal "/signup"</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <button 
+                      disabled={uploadLoading}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-colors shadow-lg disabled:opacity-50 text-xs uppercase tracking-wider flex items-center justify-center gap-1.5"
+                    >
+                      {uploadLoading ? (
+                        <Loader2 className="animate-spin" size={16} />
+                      ) : (
+                        <>
+                          <Pencil size={15} /> SAVE AND APPLY MODIFICATIONS
+                        </>
+                      )}
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleAddSlide} className="space-y-4 border-t border-slate-100 dark:border-slate-800 pt-6">
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Upload New Slideshow Banner</h4>
+                    
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase block">IMAGE TYPE SELECTION (FOR MAX HD RESOLUTION)</label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setAddMode("upload")}
+                          className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-lg transition-colors border ${
+                            addMode === "upload"
+                              ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-750"
+                          }`}
+                        >
+                          Upload File
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAddMode("url")}
+                          className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-lg transition-colors border ${
+                            addMode === "url"
+                              ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                              : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-750"
+                          }`}
+                        >
+                          Paste HD Image URL
+                        </button>
+                      </div>
+                    </div>
+
+                    {addMode === "upload" ? (
+                      <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-600 rounded-2xl p-6 text-center transition-colors cursor-pointer relative bg-slate-50/20">
+                        <input 
+                          required
+                          type="file" 
+                          accept="image/*"
+                          onChange={e => setImageFile(e.target.files?.[0] || null)}
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                        />
+                        <div className="space-y-2 flex flex-col items-center justify-center text-slate-400">
+                          <Upload size={32} className="text-slate-400" />
+                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                            {imageFile ? `Selected: ${imageFile.name}` : "Select files or Drag and Drop Banner image"}
+                          </p>
+                          <p className="text-[10px]">Supports PNG, JPG, JPEG, WEBP up to 10MB (Kept High Quality)</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Direct Image Link (HD Uncompressed Web URL)</label>
+                        <input
+                          type="url"
+                          required
+                          value={newSlideUrl}
+                          onChange={e => setNewSlideUrl(e.target.value)}
+                          placeholder="E.g., https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=85&w=2400"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-600"
+                        />
+                        <p className="text-[9px] text-slate-400">Add any direct link to a beautiful, clean HD wallpaper of your choice.</p>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Slide Headline Title</label>
+                        <input 
+                          required
+                          value={newSlideData.title}
+                          onChange={e => setNewSlideData({...newSlideData, title: e.target.value})}
+                          placeholder="E.g., EMPOWERING FAMILIES"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Description message</label>
+                        <input 
+                          required
+                          value={newSlideData.description}
+                          onChange={e => setNewSlideData({...newSlideData, description: e.target.value})}
+                          placeholder="Explain slide's key action/program"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Button CTA text</label>
+                        <input 
+                          required
+                          value={newSlideData.cta}
+                          onChange={e => setNewSlideData({...newSlideData, cta: e.target.value})}
+                          placeholder="E.g., Sponsor Cow"
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900 dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase">Button Target Route</label>
+                        <select 
+                          value={newSlideData.link}
+                          onChange={e => setNewSlideData({...newSlideData, link: e.target.value})}
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-extrabold text-slate-900 dark:text-white"
+                        >
+                          <option value="/">Home Dashboard</option>
+                          <option value="/about">About Us Page "/about"</option>
+                          <option value="/announcements">Announcements Page "/announcements"</option>
+                          <option value="/contact">Contact Page "/contact"</option>
+                          <option value="/login">Log-in Portal "/login"</option>
+                          <option value="/signup">Register Portal "/signup"</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <button 
+                      disabled={uploadLoading}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors shadow-lg disabled:opacity-50 text-xs uppercase tracking-wider flex items-center justify-center gap-1.5"
+                    >
+                      {uploadLoading ? (
+                        <Loader2 className="animate-spin" size={16} />
+                      ) : (
+                        <>
+                          <Plus size={16} /> UPLOAD AND SAVE HERO SLIDE
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
+
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-6 mt-6 space-y-4">
+                  <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                    <Settings size={16} />
+                    <h4 className="text-xs font-black uppercase tracking-wider">Customize "Our Impact" & "Our Mission" Section Photo</h4>
+                  </div>
+                  
+                  <div className="bg-slate-50 dark:bg-slate-800/55 p-4 rounded-2xl border border-slate-150 dark:border-slate-800 space-y-4">
+                    <p className="text-[10px] text-slate-400 leading-relaxed">Modify the photo shown alongside Batotutarigito's mission description, sustainable change timeline, cow support list and academic sponsorship items.</p>
+                    
+                    <form onSubmit={handleUpdateImpactImage} className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase block">IMAGE SOURCE SELECTION</label>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setImpactImageMode("upload")}
+                            className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-lg transition-colors border ${
+                              impactImageMode === "upload"
+                                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            Upload File
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setImpactImageMode("url")}
+                            className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-lg transition-colors border ${
+                              impactImageMode === "url"
+                                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                                : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                            }`}
+                          >
+                            Paste Flawless HD URL
+                          </button>
+                        </div>
+                      </div>
+
+                      {impactImageMode === "upload" ? (
+                        <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-600 rounded-2xl p-4 text-center transition-colors cursor-pointer relative bg-slate-50/20">
+                          <input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={e => setImpactImageFile(e.target.files?.[0] || null)}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                          />
+                          <div className="space-y-1.5 flex flex-col items-center justify-center text-slate-400">
+                            <Upload size={24} className="text-slate-400" />
+                            <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                              {impactImageFile ? `Selected: ${impactImageFile.name}` : "Click/Drag to replace the Current Section image"}
+                            </p>
+                            <p className="text-[10px]">Supports PNG, JPG, JPEG, WEBP up to 10MB</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-500 uppercase block">Direct Image Link (Uncompressed Web URL)</label>
+                          <input
+                            type="url"
+                            required
+                            value={impactImageUrl}
+                            onChange={e => setImpactImageUrl(e.target.value)}
+                            placeholder="E.g., https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=85&w=2400"
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-600"
+                          />
+                        </div>
+                      )}
+
+                      <button 
+                        disabled={impactUploadLoading}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-colors shadow-md disabled:opacity-50 text-xs uppercase tracking-wider flex items-center justify-center gap-1.5"
+                      >
+                        {impactUploadLoading ? (
+                          <Loader2 className="animate-spin" size={14} />
+                        ) : (
+                          <>
+                            <Upload size={14} /> APPLY IMAGE CHANGES
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  </div>
+                </div>
               </div>
 
             </motion.div>

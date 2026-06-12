@@ -511,7 +511,7 @@ app.get("/api/resources/admins", async (req, res) => {
 const defaultBanners = [
   {
     id: "1",
-    image: "/umuganda.webp",
+    image: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=85&w=2400",
     title: "Community Impact",
     description: "Working together to build a sustainable future for our community in Karongi.",
     cta: "Learn More",
@@ -519,7 +519,7 @@ const defaultBanners = [
   },
   {
     id: "2",
-    image: "/cow2.webp",
+    image: "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?auto=format&fit=crop&q=85&w=2400",
     title: "The Cow Project",
     description: "Providing nutrition and economic stability to families through cow sponsorship and distribution.",
     cta: "Support a Family",
@@ -527,7 +527,7 @@ const defaultBanners = [
   },
   {
     id: "3",
-    image: "/gufasha.webp",
+    image: "https://images.unsplash.com/photo-1531538606174-0f90ff5dce83?auto=format&fit=crop&q=85&w=2400",
     title: "Our Dedicated Staff",
     description: "Meet the passionate individuals working on the front lines to transform lives.",
     cta: "Meet the Team",
@@ -535,7 +535,7 @@ const defaultBanners = [
   },
   {
     id: "4",
-    image: "/gufasha2.webp",
+    image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=85&w=2400",
     title: "Student Sponsorship",
     description: "Empowering the next generation through education and long-term sponsorship programs.",
     cta: "Sponsor Now",
@@ -543,7 +543,7 @@ const defaultBanners = [
   },
   {
     id: "5",
-    image: "/kwibuka.webp",
+    image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=85&w=2400",
     title: "Preserving History",
     description: "Honoring our history while building a bright future for all members of our society.",
     cta: "Our History",
@@ -551,7 +551,7 @@ const defaultBanners = [
   },
   {
     id: "6",
-    image: "/admin.webp",
+    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=85&w=2400",
     title: "Leadership & Vision",
     description: "Guided by transparency and a commitment to serving those who need it most.",
     cta: "Contact Us",
@@ -559,7 +559,7 @@ const defaultBanners = [
   },
   {
     id: "7",
-    image: "/kuremera.webp",
+    image: "https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&q=85&w=2400",
     title: "Global Partnership",
     description: "Connecting supporters from around the world to local initiatives that matter.",
     cta: "Join Us",
@@ -572,6 +572,14 @@ let memoryBanners: any[] | null = null;
 app.get("/api/home-banners", async (req, res) => {
   try {
     if (memoryBanners) {
+      // Ensure any low-res default webps inside the memory storage are upgraded on-the-fly
+      memoryBanners = memoryBanners.map(b => {
+        const matchingDef = defaultBanners.find(d => d.id === b.id);
+        if (matchingDef && b.image.endsWith(".webp") && !b.image.startsWith("http")) {
+          return { ...b, image: matchingDef.image };
+        }
+        return b;
+      });
       return res.json(memoryBanners);
     }
     const tmpFile = path.join(os.tmpdir(), "home_banners.json");
@@ -588,6 +596,18 @@ app.get("/api/home-banners", async (req, res) => {
         memoryBanners = [...defaultBanners];
       }
     }
+
+    if (memoryBanners) {
+      // Ensure any low-res default webps inside the persisted files are upgraded on-the-fly
+      memoryBanners = memoryBanners.map(b => {
+        const matchingDef = defaultBanners.find(d => d.id === b.id);
+        if (matchingDef && b.image.endsWith(".webp") && !b.image.startsWith("http")) {
+          return { ...b, image: matchingDef.image };
+        }
+        return b;
+      });
+    }
+
     res.json(memoryBanners);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -637,6 +657,46 @@ app.post("/api/home-banners", requireAuth, requireAdmin, async (req: any, res) =
   }
 });
 
+app.put("/api/home-banners/:id", requireAuth, requireAdmin, async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const { image, title, description, cta, link } = req.body;
+
+    if (!memoryBanners) {
+      try {
+        const tmpFile = path.join(os.tmpdir(), "home_banners.json");
+        const localFile = path.join(process.cwd(), "uploads", "home_banners.json");
+        const data = await fs.readFile(tmpFile, "utf-8").catch(() => fs.readFile(localFile, "utf-8"));
+        memoryBanners = JSON.parse(data);
+      } catch {
+        memoryBanners = [...defaultBanners];
+      }
+    }
+
+    const slideIndex = memoryBanners.findIndex((b: any) => b.id === id);
+    if (slideIndex === -1) {
+      return res.status(404).json({ error: "Slide banner not found" });
+    }
+
+    if (image !== undefined) memoryBanners[slideIndex].image = image;
+    if (title !== undefined) memoryBanners[slideIndex].title = title;
+    if (description !== undefined) memoryBanners[slideIndex].description = description;
+    if (cta !== undefined) memoryBanners[slideIndex].cta = cta;
+    if (link !== undefined) memoryBanners[slideIndex].link = link;
+
+    try {
+      const tmpFile = path.join(os.tmpdir(), "home_banners.json");
+      await fs.writeFile(tmpFile, JSON.stringify(memoryBanners, null, 2));
+    } catch (writeErr) {
+      console.warn("Unable to persist banners to filesystem, using in-memory updates:", writeErr);
+    }
+
+    res.json(memoryBanners[slideIndex]);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.delete("/api/home-banners/:id", requireAuth, requireAdmin, async (req: any, res) => {
   try {
     const { id } = req.params;
@@ -661,6 +721,51 @@ app.delete("/api/home-banners/:id", requireAuth, requireAdmin, async (req: any, 
     }
     
     res.json({ success: true, message: "Banner deleted successfully" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+let memoryImpactImage: string | null = null;
+const defaultImpactImage = "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=85&w=2400";
+
+app.get("/api/impact-image", async (req, res) => {
+  try {
+    if (memoryImpactImage) {
+      return res.json({ image: memoryImpactImage });
+    }
+    const tmpFile = path.join(os.tmpdir(), "impact_image.json");
+    const localFile = path.join(process.cwd(), "uploads", "impact_image.json");
+    
+    try {
+      const data = await fs.readFile(tmpFile, "utf-8");
+      const parsed = JSON.parse(data);
+      memoryImpactImage = parsed.image || defaultImpactImage;
+    } catch {
+      try {
+        const data = await fs.readFile(localFile, "utf-8");
+        const parsed = JSON.parse(data);
+        memoryImpactImage = parsed.image || defaultImpactImage;
+      } catch {
+        memoryImpactImage = defaultImpactImage;
+      }
+    }
+    res.json({ image: memoryImpactImage });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put("/api/impact-image", requireAuth, requireAdmin, async (req: any, res) => {
+  try {
+    const { image } = req.body;
+    if (!image) {
+      return res.status(400).json({ error: "Image URL is required" });
+    }
+    memoryImpactImage = image;
+    const tmpFile = path.join(os.tmpdir(), "impact_image.json");
+    await fs.writeFile(tmpFile, JSON.stringify({ image: memoryImpactImage }, null, 2));
+    res.json({ image: memoryImpactImage });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

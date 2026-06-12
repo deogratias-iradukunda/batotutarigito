@@ -1,10 +1,27 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Award, BookOpen, Heart, Landmark, Users, CheckCircle, Shield, Globe } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SEO } from "../components/SEO";
+import api from "../lib/api";
 
 export const About: React.FC = () => {
+  const [impactImage, setImpactImage] = useState("https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=85&w=2400");
+
+  useEffect(() => {
+    const fetchImpactImage = async () => {
+      try {
+        const res = await api.get("/api/impact-image");
+        if (res.data && res.data.image) {
+          setImpactImage(res.data.image);
+        }
+      } catch {
+        // Fallback is used
+      }
+    };
+    fetchImpactImage();
+  }, []);
+
   const aboutSchema = {
     "@context": "https://schema.org",
     "@type": "AboutPage",
@@ -58,7 +75,7 @@ export const About: React.FC = () => {
       />
       {/* Hero Banner Section */}
       <section className="relative py-24 bg-slate-900 overflow-hidden">
-        <div className="absolute inset-0 z-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url('/umuganda.webp')" }} />
+        <div className="absolute inset-0 z-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&q=85&w=2400')" }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/80 to-slate-900/40 z-0" />
         
         <div className="relative z-10 max-w-7xl mx-auto px-6 text-center space-y-6">
@@ -114,7 +131,7 @@ export const About: React.FC = () => {
         <div className="relative bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-100 dark:border-slate-800 p-8">
           <div className="absolute -top-12 -left-12 w-48 h-48 bg-blue-100 dark:bg-blue-900/10 rounded-full blur-3xl" />
           <img 
-            src="/kuremera.webp" 
+            src={impactImage} 
             alt="Students Studying" 
             className="w-full h-80 object-cover rounded-2xl relative z-10 shadow-md border border-slate-100 dark:border-slate-800"
           />
