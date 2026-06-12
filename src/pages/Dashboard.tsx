@@ -106,7 +106,7 @@ export const UserDashboard: React.FC = () => {
     <div className="flex h-[90vh] items-center justify-center">
       <div className="text-center space-y-4">
         <Loader2 className="animate-spin text-blue-600 mx-auto" size={40} />
-        <p className="text-slate-500 font-medium animate-pulse">Loading your portfolio...</p>
+        <p className="text-slate-500 font-medium animate-pulse">Loading your portal...</p>
       </div>
     </div>
   );
@@ -116,7 +116,7 @@ export const UserDashboard: React.FC = () => {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">My Portfolio</h1>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">My Portal</h1>
           </div>
           <p className="text-slate-500 dark:text-slate-400">Welcome back, {studentProfile?.name || authUser?.email}! Here's your activity.</p>
         </div>

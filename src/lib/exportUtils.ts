@@ -45,8 +45,19 @@ export const exportToCSV = (title: string, headers: string[], rows: string[][]) 
   document.body.removeChild(link);
 };
 
+// Helper to load an image from a URL and resolve as HTMLImageElement
+const loadImage = (url: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = (err) => reject(err);
+    img.src = url;
+  });
+};
+
 // Generates and downloads a highly styled PDF document matching the premium branding
-export const exportToPDF = (title: string, headers: string[], rows: string[][], description: string) => {
+export const exportToPDF = async (title: string, headers: string[], rows: string[][], description: string) => {
   const doc = new jsPDF("p", "mm", "a4");
   const pageWidth = doc.internal.pageSize.getWidth();
   
@@ -55,17 +66,31 @@ export const exportToPDF = (title: string, headers: string[], rows: string[][], 
   doc.setFillColor(37, 99, 235); // BatoTutariGito brand blue (#2563eb)
   doc.rect(0, 0, pageWidth, 8, "F");
   
+  // Try loading logo to place it on the top left
+  const LOGO_SIZE = 16; // 16mm
+  let textStartX = 14;
+  let hasLogo = false;
+  
+  try {
+    const logoImg = await loadImage("/logo.png");
+    doc.addImage(logoImg, "PNG", 14, 12, LOGO_SIZE, LOGO_SIZE);
+    textStartX = 14 + LOGO_SIZE + 4; // Shift title to the right of the logo
+    hasLogo = true;
+  } catch (err) {
+    console.warn("Logo path could not be resolved, proceeding with default text headers:", err);
+  }
+
   // Title (Branding)
   doc.setFont("helvetica", "bold");
   doc.setFontSize(20);
   doc.setTextColor(15, 23, 42); // slate-900
-  doc.text("BatoTutariGito NGO", 14, 22);
+  doc.text("BatoTutariGito NGO", textStartX, 20);
   
   // Subtitle
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(100, 116, 139); // slate-500
-  doc.text("Rubengera, Karongi District, Western Province, Rwanda", 14, 28);
+  doc.text("Rubengera, Karongi District, Western Province, Rwanda", textStartX, 26);
   
   // Report Title
   doc.setFont("helvetica", "bold");
@@ -131,7 +156,7 @@ export const exportToPDF = (title: string, headers: string[], rows: string[][], 
 };
 
 // Orchestrates matching reports to accurate extraction and formatting
-export const exportReportDataset = (
+export const exportReportDataset = async (
   type: string, 
   data: any[], 
   formatType: "csv" | "pdf"

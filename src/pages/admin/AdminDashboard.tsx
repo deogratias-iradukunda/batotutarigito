@@ -1583,71 +1583,112 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onPasswordChanged }) => {
 
 const StudentManagement = ({ data, onEdit, onDelete }: any) => (
   <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 text-slate-700">
-    <table className="w-full text-left text-sm">
-      <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 uppercase text-[10px] font-bold">
-        <tr>
-          <th className="px-6 py-4">Name</th>
-          <th className="px-6 py-4">Email</th>
-          <th className="px-6 py-4">Dept</th>
-          <th className="px-6 py-4">Actions</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold">
-        {data.length === 0 ? (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm min-w-[1000px]">
+        <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 uppercase text-[10px] font-bold">
           <tr>
-            <td colSpan={4} className="text-center py-8 text-slate-400 font-medium">No active students found.</td>
+            <th className="px-6 py-4">Name</th>
+            <th className="px-6 py-4">Email</th>
+            <th className="px-6 py-4">Telephone</th>
+            <th className="px-6 py-4">Gender</th>
+            <th className="px-6 py-4">Dept / Level</th>
+            <th className="px-6 py-4">Sponsorship Period</th>
+            <th className="px-6 py-4">Address</th>
+            <th className="px-6 py-4">Actions</th>
           </tr>
-        ) : data.map((s: any) => (
-          <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-            <td className="px-6 py-4 font-bold dark:text-white">{s.name}</td>
-            <td className="px-6 py-4 text-slate-500 font-medium">{s.email}</td>
-            <td className="px-6 py-4 dark:text-slate-300 font-medium">{s.department}</td>
-            <td className="px-6 py-4 space-x-2 text-xs">
-              <button onClick={() => onEdit(s)} className="text-blue-600 hover:text-blue-700 font-bold">Edit</button>
-              <button onClick={() => onDelete(s.id)} className="text-red-600 hover:text-red-700 font-bold">Delete</button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-xs">
+          {data.length === 0 ? (
+            <tr>
+              <td colSpan={8} className="text-center py-8 text-slate-400 font-medium">No active students found.</td>
+            </tr>
+          ) : data.map((s: any) => {
+            const displayAddress = [s.sector, s.cell, s.village].filter(Boolean).join(", ") || [s.address?.sector, s.address?.cell, s.address?.village].filter(Boolean).join(", ") || "N/A";
+            const startDateStr = s.startDate ? new Date(s.startDate).toLocaleDateString() : "";
+            const endDateStr = s.endDate ? new Date(s.endDate).toLocaleDateString() : "";
+            return (
+              <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                <td className="px-6 py-4 font-bold dark:text-white text-slate-900">{s.name}</td>
+                <td className="px-6 py-4 text-slate-500 font-medium font-mono text-[11px]">{s.email}</td>
+                <td className="px-6 py-4 text-slate-600 font-medium">{s.telephone || "N/A"}</td>
+                <td className="px-6 py-4 text-slate-600 font-medium">{s.gender || "N/A"}</td>
+                <td className="px-6 py-4">
+                  <span className="text-slate-600 dark:text-slate-300 font-bold">{s.department || "N/A"}</span>
+                  {s.level && <span className="text-slate-400 dark:text-slate-500 font-semibold text-[10px] block">{s.level}</span>}
+                </td>
+                <td className="px-6 py-4 font-medium text-slate-500">
+                  {startDateStr || endDateStr ? `${startDateStr || 'N/A'} - ${endDateStr || 'N/A'}` : "N/A"}
+                </td>
+                <td className="px-6 py-4 text-slate-500 font-medium" title={displayAddress}>
+                  <div className="max-w-[150px] truncate">{displayAddress}</div>
+                </td>
+                <td className="px-6 py-4 space-x-2 text-xs">
+                  <button onClick={() => onEdit(s)} className="text-blue-600 hover:text-blue-700 font-bold">Edit</button>
+                  <button onClick={() => onDelete(s.id)} className="text-red-600 hover:text-red-700 font-bold">Delete</button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   </div>
 );
 
 const GraduateManagement = ({ data, onEdit, onDelete }: any) => (
   <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-800 text-slate-700">
-    <table className="w-full text-left text-sm font-semibold">
-      <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 uppercase text-[10px] font-bold">
-        <tr>
-          <th className="px-6 py-4">Name</th>
-          <th className="px-6 py-4">Email</th>
-          <th className="px-6 py-4">Department</th>
-          <th className="px-6 py-4">Status</th>
-          <th className="px-6 py-4">Actions</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-        {data.length === 0 ? (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-sm font-semibold min-w-[1100px]">
+        <thead className="bg-slate-50 dark:bg-slate-950 text-slate-500 uppercase text-[10px] font-bold">
           <tr>
-            <td colSpan={5} className="text-center py-8 text-slate-400 font-medium">No graduates found in roster.</td>
+            <th className="px-6 py-4">Name</th>
+            <th className="px-6 py-3">Email</th>
+            <th className="px-6 py-4">Telephone</th>
+            <th className="px-6 py-4">Gender</th>
+            <th className="px-6 py-4">Department</th>
+            <th className="px-6 py-4">Sponsorship Period</th>
+            <th className="px-6 py-4">Address</th>
+            <th className="px-6 py-4">Status</th>
+            <th className="px-6 py-4">Actions</th>
           </tr>
-        ) : data.map((g: any) => (
-          <tr key={g.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
-            <td className="px-6 py-4 font-bold dark:text-white text-slate-900">{g.name}</td>
-            <td className="px-6 py-4 text-slate-500 font-medium">{g.email}</td>
-            <td className="px-6 py-4 dark:text-slate-300 text-slate-600 font-medium">{g.department}</td>
-            <td className="px-6 py-4">
-              <span className="px-2.5 py-0.5 text-xs font-bold rounded-full bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 capitalize">
-                Graduated
-              </span>
-            </td>
-            <td className="px-6 py-4 space-x-2 text-xs font-bold">
-              <button onClick={() => onEdit(g)} className="text-blue-600 hover:text-blue-700 font-bold">Edit</button>
-              <button onClick={() => onDelete(g.id)} className="text-red-600 hover:text-red-700 font-bold">Delete</button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+          {data.length === 0 ? (
+            <tr>
+              <td colSpan={9} className="text-center py-8 text-slate-400 font-medium">No graduates found in roster.</td>
+            </tr>
+          ) : data.map((g: any) => {
+            const displayAddress = [g.sector, g.cell, g.village].filter(Boolean).join(", ") || [g.address?.sector, g.address?.cell, g.address?.village].filter(Boolean).join(", ") || "N/A";
+            const startDateStr = g.startDate ? new Date(g.startDate).toLocaleDateString() : "";
+            const endDateStr = g.endDate ? new Date(g.endDate).toLocaleDateString() : "";
+            return (
+              <tr key={g.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                <td className="px-6 py-4 font-bold dark:text-white text-slate-900">{g.name}</td>
+                <td className="px-6 py-4 text-slate-500 font-medium font-mono text-[11px]">{g.email}</td>
+                <td className="px-6 py-4 text-slate-600 font-medium">{g.telephone || "N/A"}</td>
+                <td className="px-6 py-4 text-slate-600 font-medium">{g.gender || "N/A"}</td>
+                <td className="px-6 py-4 dark:text-slate-300 text-slate-600 font-medium">{g.department || "N/A"}</td>
+                <td className="px-6 py-4 font-medium text-slate-500">
+                  {startDateStr || endDateStr ? `${startDateStr || 'N/A'} - ${endDateStr || 'N/A'}` : "N/A"}
+                </td>
+                <td className="px-6 py-4 text-slate-500 font-medium" title={displayAddress}>
+                  <div className="max-w-[150px] truncate">{displayAddress}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 capitalize">
+                    Graduated
+                  </span>
+                </td>
+                <td className="px-6 py-4 space-x-2 text-xs font-bold">
+                  <button onClick={() => onEdit(g)} className="text-blue-600 hover:text-blue-700 font-bold">Edit</button>
+                  <button onClick={() => onDelete(g.id)} className="text-red-600 hover:text-red-700 font-bold">Delete</button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   </div>
 );
 
@@ -2216,6 +2257,16 @@ const ManagementForm = ({ type, initialData, onClose }: any) => {
     switch (type) {
       case "students":
       case "graduated":
+        const formatToInputDate = (fieldVal: any) => {
+          if (!fieldVal) return "";
+          try {
+            const d = new Date(fieldVal);
+            if (isNaN(d.getTime())) return "";
+            return d.toISOString().split('T')[0];
+          } catch (e) {
+            return "";
+          }
+        };
         return (
           <>
             <div className="space-y-1 mb-4">
@@ -2232,7 +2283,7 @@ const ManagementForm = ({ type, initialData, onClose }: any) => {
                 <input required type="email" value={formData.email || ""} onChange={e => setFormData({...formData, email: e.target.value})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 text-slate-700">
+            <div className="grid grid-cols-2 gap-4 text-slate-700 mt-4">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase">Department</label>
                 <input value={formData.department || ""} onChange={e => setFormData({...formData, department: e.target.value})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2" />
@@ -2240,6 +2291,85 @@ const ManagementForm = ({ type, initialData, onClose }: any) => {
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500 uppercase">Level</label>
                 <input value={formData.level || ""} onChange={e => setFormData({...formData, level: e.target.value})} className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-slate-700 mt-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500 uppercase">Telephone</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g., +250 788..." 
+                  value={formData.telephone || ""} 
+                  onChange={e => setFormData({...formData, telephone: e.target.value})} 
+                  className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2" 
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500 uppercase">Gender</label>
+                <select 
+                  value={formData.gender || ""} 
+                  onChange={e => setFormData({...formData, gender: e.target.value})} 
+                  className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-slate-700 mt-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500 uppercase">Sponsorship Start Date</label>
+                <input 
+                  type="date" 
+                  value={formatToInputDate(formData.startDate)} 
+                  onChange={e => setFormData({...formData, startDate: e.target.value})} 
+                  className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 font-mono text-xs" 
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500 uppercase">Sponsorship End Date</label>
+                <input 
+                  type="date" 
+                  value={formatToInputDate(formData.endDate)} 
+                  onChange={e => setFormData({...formData, endDate: e.target.value})} 
+                  className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 font-mono text-xs" 
+                />
+              </div>
+            </div>
+            <div className="border-t border-slate-100 dark:border-slate-800 mt-6 pt-4 space-y-4">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-widest font-semibold">Physical Location Address</h4>
+              <div className="grid grid-cols-3 gap-2 text-slate-700">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Sector</label>
+                  <input 
+                    type="text" 
+                    placeholder="Sector" 
+                    value={formData.sector || ""} 
+                    onChange={e => setFormData({...formData, sector: e.target.value})} 
+                    className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs" 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Cell</label>
+                  <input 
+                    type="text" 
+                    placeholder="Cell" 
+                    value={formData.cell || ""} 
+                    onChange={e => setFormData({...formData, cell: e.target.value})} 
+                    className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs" 
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Village</label>
+                  <input 
+                    type="text" 
+                    placeholder="Village" 
+                    value={formData.village || ""} 
+                    onChange={e => setFormData({...formData, village: e.target.value})} 
+                    className="form-input w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs" 
+                  />
+                </div>
               </div>
             </div>
           </>
