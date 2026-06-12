@@ -127,8 +127,8 @@ export function ChatInterface() {
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-10 transition-all">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-50 rounded-xl">
-            <Bot className="w-6 h-6 text-blue-600" />
+          <div className="w-10 h-10 bg-white border border-gray-200 rounded-xl overflow-hidden p-1 flex items-center justify-center">
+            <img src="/logo.png" alt="BatoTutariGito Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">

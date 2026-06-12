@@ -4,10 +4,11 @@ const API_ROOT = '';
 
 export async function sendMessage(history: Message[], message: string) {
   try {
+    const language = typeof window !== 'undefined' ? (localStorage.getItem("i18nextLng") || "en") : "en";
     const response = await fetch(`${API_ROOT}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ history, message })
+      body: JSON.stringify({ history, message, language })
     });
 
     if (!response.ok) {
@@ -30,10 +31,11 @@ export class GeminiError extends Error {
 
 export async function* sendMessageStream(history: Message[], message: string) {
   try {
+    const language = typeof window !== 'undefined' ? (localStorage.getItem("i18nextLng") || "en") : "en";
     const response = await fetch(`${API_ROOT}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ history, message })
+      body: JSON.stringify({ history, message, language })
     });
 
     if (!response.ok) {

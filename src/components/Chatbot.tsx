@@ -4,17 +4,82 @@ import { MessageSquare, Send, X, Bot, User, Loader2, Trash2, RefreshCw, AlertCir
 import { sendMessageStream, GeminiError } from "../services/geminiService";
 import { Message, Role } from "../types";
 
-const FAQs = [
-  "How do I register as a student?",
-  "How do families receive support?",
-  "What is the Cow project?",
-  "How do I contact the administrator?"
-];
-
 const STORAGE_KEY = "batotutarigito-chat-history";
+
+const LOCAL_TRANSLATIONS: Record<string, {
+  welcome: string;
+  placeholder: string;
+  suggestionsTitle: string;
+  clearHistory: string;
+  onlineReady: string;
+  faqs: string[];
+}> = {
+  en: {
+    welcome: "Hello! I'm the BatoTutariGito AI Assistant. How can I help you today?",
+    placeholder: "Ask me anything...",
+    suggestionsTitle: "Suggestions",
+    clearHistory: "Clear Chat History",
+    onlineReady: "Online & Ready",
+    faqs: [
+      "NGO Coordinators & Developers",
+      "Who is the System Analyst?",
+      "What is the Cow project?",
+      "How do families receive support?",
+      "How do I register as a student?"
+    ]
+  },
+  rw: {
+    welcome: "Muraho! Ndi Umufasha wa BatoTutariGito ukoresha AI. Nzagufasha iki uyu munsi?",
+    placeholder: "Mbaza ikibazo icyo ari cyo cyose...",
+    suggestionsTitle: "Ibibazo Bikunze Kubazwa",
+    clearHistory: "Siba Amateka y'Ibiganiro",
+    onlineReady: "Ndi ku murongo • Nditeguye",
+    faqs: [
+      "Abaterankunga na ba Developers",
+      "Umusesenguzi w'iyi Sisitemu ni nde?",
+      "Umushinga w'Inka ni iki?",
+      "Imiryango ihabwa inkunga gute?",
+      "Nakwiyandikisha nte nk'umunyeshuri?"
+    ]
+  },
+  fr: {
+    welcome: "Bonjour ! Je suis l'assistant IA de BatoTutariGito. Comment puis-je vous aider aujourd'hui ?",
+    placeholder: "Demandez-moi n'importe quoi...",
+    suggestionsTitle: "Suggestions",
+    clearHistory: "Effacer l'historique de discussion",
+    onlineReady: "En ligne et prêt",
+    faqs: [
+      "Coordinateurs & Développeurs",
+      "Qui est l'Analyste Système ?",
+      "Quel est le Projet Vaches ?",
+      "Comment les familles sont soutenues ?",
+      "Comment s'enregistrer comme étudiant ?"
+    ]
+  },
+  sw: {
+    welcome: "Jambo! Mimi ni msaidizi wa AI wa BatoTutariGito. Naweza kukusaidia vipi leo?",
+    placeholder: "Uliza chochote...",
+    suggestionsTitle: "Mapendekezo",
+    clearHistory: "Futa Historia ya Gumzo",
+    onlineReady: "Niko mtandaoni",
+    faqs: [
+      "Waratibu wa Jamii & Wasanidi",
+      "Mchambuzi wa Mfumo ni nani?",
+      "Mradi wa Ng'ombe ni nini?",
+      "Familia zinapataje msaada?",
+      "Nitajisajili vipi kama mwanafunzi?"
+    ]
+  }
+};
 
 export const Chatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [currentLang, setCurrentLang] = useState<string>(() => {
+    return localStorage.getItem("i18nextLng") || "en";
+  });
+
+  const activeTrans = LOCAL_TRANSLATIONS[currentLang] || LOCAL_TRANSLATIONS["en"];
+
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -27,7 +92,7 @@ export const Chatbot: React.FC = () => {
     return [
       { 
         role: Role.MODEL, 
-        content: "Hello! I'm the BatoTutariGito assistant. How can I help you today?",
+        content: "Hello! I'm the BatoTutariGito AI Assistant. How can I help you today?",
         timestamp: Date.now()
       }
     ];
@@ -37,6 +102,34 @@ export const Chatbot: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<{ message: string; type: string } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleLangChange = () => {
+      const newLang = localStorage.getItem("i18nextLng") || "en";
+      setCurrentLang(newLang);
+    };
+    window.addEventListener("languagechange", handleLangChange);
+    const interval = setInterval(handleLangChange, 1000);
+    return () => {
+      window.removeEventListener("languagechange", handleLangChange);
+      clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (messages.length === 1 && messages[0].role === Role.MODEL) {
+      const currentWelcomes = Object.values(LOCAL_TRANSLATIONS).map(t => t.welcome);
+      if (currentWelcomes.includes(messages[0].content) || messages[0].content.includes("Hello! I'm the BatoTutariGito assistant") || messages[0].content.includes("Hello! I'm the BatoTutariGito AI Assistant")) {
+        setMessages([
+          {
+            role: Role.MODEL,
+            content: activeTrans.welcome,
+            timestamp: messages[0].timestamp
+          }
+        ]);
+      }
+    }
+  }, [currentLang, messages.length]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
@@ -108,7 +201,7 @@ export const Chatbot: React.FC = () => {
     const defaultMessages = [
       { 
         role: Role.MODEL, 
-        content: "Hello! I'm the BatoTutariGito assistant. How can I help you today?",
+        content: activeTrans.welcome,
         timestamp: Date.now()
       }
     ];
@@ -143,24 +236,27 @@ export const Chatbot: React.FC = () => {
             id="chatbot-container"
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4.5 text-white flex justify-between items-center relative overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 shadow-sm text-white flex justify-between items-center relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full pointer-events-none -mr-8 -mt-8" />
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center relative">
-                  <Bot size={20} className="text-white" />
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-blue-600" />
+              <div className="flex items-center gap-3 relative z-10">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center relative p-1 overflow-hidden ring-2 ring-white/20">
+                  <img src="/logo.png" alt="BatoTutariGito Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white animate-pulse" />
                 </div>
                 <div>
-                  <span className="font-bold text-sm block leading-tight">Virtual Guide</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-sm block leading-tight">Virtual Guide</span>
+                    <span className="bg-white/20 text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider font-mono">AI Agent</span>
+                  </div>
                   <span className="text-[10px] text-blue-100 font-medium flex items-center gap-1">
-                    Online & Ready
+                    {activeTrans.onlineReady}
                   </span>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 relative z-10">
                 <button 
                   onClick={startNewChat} 
-                  title="Clear Chat History"
+                  title={activeTrans.clearHistory}
                   className="hover:bg-white/10 p-2 rounded-xl transition-colors text-white/90 hover:text-white"
                   id="chatbot-clear-btn"
                 >
@@ -181,15 +277,15 @@ export const Chatbot: React.FC = () => {
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === Role.USER ? 'justify-end' : 'justify-start'}`}>
                   <div className={`flex max-w-[85%] ${msg.role === Role.USER ? 'flex-row-reverse' : 'flex-row'} gap-2.5`}>
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                      msg.role === Role.USER ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-slate-200 dark:bg-slate-800'
-                    }`}>
-                      {msg.role === Role.USER ? (
+                    {msg.role === Role.USER ? (
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 bg-blue-50 dark:bg-blue-900/30">
                         <User size={14} className="text-blue-600 dark:text-blue-400" />
-                      ) : (
-                        <Bot size={14} className="text-slate-600 dark:text-slate-400" />
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-white border border-slate-100 dark:border-slate-850 flex items-center justify-center flex-shrink-0 mt-0.5 p-0.5 overflow-hidden">
+                        <img src="/logo.png" alt="BatoTutariGito Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                      </div>
+                    )}
                     <div className={`p-3 px-4 rounded-2xl text-sm ${
                       msg.role === Role.USER 
                       ? 'bg-blue-600 text-white rounded-tr-none shadow-sm' 
@@ -233,9 +329,9 @@ export const Chatbot: React.FC = () => {
             {/* Suggestions */}
             {messages.length === 1 && (
               <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 font-mono">Suggestions</p>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 font-mono">{activeTrans.suggestionsTitle}</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {FAQs.map(faq => (
+                  {activeTrans.faqs.map(faq => (
                     <button 
                       key={faq}
                       onClick={() => handleSend(faq)}
@@ -253,7 +349,7 @@ export const Chatbot: React.FC = () => {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask me anything..."
+                placeholder={activeTrans.placeholder}
                 disabled={isTyping}
                 className="flex-1 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-2.5 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 outline-none transition-all disabled:opacity-50"
               />
@@ -271,15 +367,33 @@ export const Chatbot: React.FC = () => {
       </AnimatePresence>
 
       <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-blue-600 text-white p-4.5 rounded-full shadow-2xl flex items-center justify-center group relative overflow-hidden"
+        className={`bg-white dark:bg-slate-900 text-slate-800 dark:text-blue-400 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl shadow-xl hover:shadow-2xl flex items-center justify-center group relative overflow-hidden transition-all p-2 pr-3.5`}
         id="chatbot-toggle-button"
         aria-label="Open Virtual Guide"
       >
-        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-        {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
+        <div className="absolute inset-0 bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+        {isOpen ? (
+          <div className="flex items-center gap-2 pl-1">
+            <X size={20} className="text-slate-600 dark:text-slate-450" />
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Close</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 bg-slate-50 dark:bg-slate-850 rounded-xl flex items-center justify-center overflow-hidden p-0.5 shadow-inner ring-2 ring-blue-500/20 relative">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-white dark:border-slate-900 animate-pulse" />
+            </div>
+            <div className="flex flex-col items-start leading-tight">
+              <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-1 font-mono">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-ping" /> AI Agent
+              </span>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Virtual Guide</span>
+            </div>
+          </div>
+        )}
       </motion.button>
     </div>
   );

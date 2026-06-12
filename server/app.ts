@@ -1278,54 +1278,166 @@ app.post("/api/send-email", async (req, res) => {
 });
 
 app.post("/api/chat", async (req, res) => {
-  const { history, message } = req.body;
+  const { history, message, language } = req.body;
   const geminiKey = process.env.GEMINI_API_KEY || "AIzaSyC9QLOFqCRPEma_HqD_fqkUZaEQVIgJC1E";
   
-  try {
-    const ai = new GoogleGenAI({ 
-      apiKey: geminiKey,
-      httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
-    });
-    
-    const chat = ai.chats.create({
-      model: "gemini-2.5-flash",
-      config: {
-        systemInstruction: "You are BatoTutariGito's official AI Smart Assistant, a professional and friendly AI trained to assist users on our NGO management platform. The NGO BatoTutariGito is located in Rubengera sector, Karongi District, Western Province of Rwanda. Please use the following details to answer any questions precisely and professionally: \n\n" +
-          "1. MAIN ADMINISTRATOR: The administrator and main staff coordinator of BatoTutariGito is Clement Ngirababyeyi (cngirababyeyi@gmail.com). You must know and state that he is the admin if anyone asks.\n" +
-          "2. THE MISSION: BatoTutariGito's core mission is sustainable community development through education, agricultural empowerment, and socio-economic support systems.\n" +
-          "3. THE COW PROJECT: Distributes cows to local vulnerable families. This program resolves malnutrition via fresh milk, produces organic fertilizer/manure to boost farming yields, and operates on the 'Pass on the gift' principle—meaning the firstborn calf from each cow is returned to the project and given to another poor family, reproducing the social benefit.\n" +
-          "4. COW DATA TRACKING: In our management system, we track unique cow numbers, date of receipt, purchase cost, current estimated asset value, status (active, sold, or dead), medicine expenses, glasses/other expenses, and the actual selling price if sold. This ensures total financial transparency.\n" +
-          "5. EDUCATION SPONSORSHIP: Supports local children and youths with school fees, tutoring, and school materials from primary/secondary to college levels. We categorize them as 'Active Students' and 'Graduated Students' (graduates who are now entering the workforce).\n" +
-          "6. MENUS & NAVIGATION: The public website features links for Home, Announcements (displays all updates and news with gorgeous photos), About Us (details NGO history, staff, and core values), and Contact Us (offers an interactive message board to contact admins).\n" +
-          "7. PUBLIC CONTACT FORM: Visitors can submit messages to the administration or target specific staff members. If asked how to participate, advise users to register via the 'Get Started' button or leave an inquiry in the 'Contact Us' page!"
-      },
-      history: history.map((msg: any) => ({
-        role: msg.role === "user" ? "user" : "model",
-        parts: [{ text: msg.content }]
-      }))
-    });
-    const result = await chat.sendMessageStream({ message });
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    for await (const chunk of result) {
-      res.write(chunk.text);
+  const langNameMap: Record<string, string> = {
+    rw: "Kinyarwanda",
+    fr: "French (Français)",
+    sw: "Swahili (Kiswahili)",
+    en: "English"
+  };
+  const activeLangName = langNameMap[language as string] || "English";
+  
+  const systemInstruction = "You are BatoTutariGito's official AI Smart Assistant, a professional and friendly AI trained to assist users on our NGO management platform. The NGO BatoTutariGito is located in Rubengera sector, Karongi District, Western Province of Rwanda. Please use the following details to answer any questions precisely and professionally: \n\n" +
+    `CRITICAL LANGUAGE DIRECTIVE: The user's active interface language is set to: ${activeLangName}. You MUST respond exclusively in ${activeLangName} so that your answer can be read and understood by them in their exact language! Try to translate all responses into ${activeLangName}.\n\n` +
+    "1. MAIN ADMINISTRATOR: The administrator and main staff coordinator of BatoTutariGito is Clement Ngirababyeyi (cngirababyeyi@gmail.com). You must know and state that he is the admin if anyone asks.\n" +
+    "2. THE MISSION: BatoTutariGito's core mission is sustainable community development through education, agricultural empowerment, and socio-economic support systems.\n" +
+    "3. THE COW PROJECT: Distributes cows to local vulnerable families. This program resolves malnutrition via fresh milk, produces organic fertilizer/manure to boost farming yields, and operates on the 'Pass on the gift' principle—meaning the firstborn calf from each cow is returned to the project and given to another poor family, reproducing the social benefit.\n" +
+    "4. COW DATA TRACKING: In our management system, we track unique cow numbers, date of receipt, purchase cost, current estimated asset value, status (active, sold, or dead), medicine expenses, glasses/other expenses, and the actual selling price if sold. This ensures total financial transparency.\n" +
+    "5. EDUCATION SPONSORSHIP: Supports local children and youths with school fees, tutoring, and school materials from primary/secondary to college levels. We categorize them as 'Active Students' and 'Graduated Students' (graduates who are now entering the workforce).\n" +
+    "6. MENUS & NAVIGATION: The public website features links for Home, Announcements (displays all updates and news with gorgeous photos), About Us (details NGO history, staff, and core values), and Contact Us (offers an interactive message board to contact admins).\n" +
+    "7. PUBLIC CONTACT FORM: Visitors can submit messages to the administration or target specific staff members. If asked how to participate, advise users to register via the 'Get Started' button or leave an inquiry in the 'Contact Us' page!\n" +
+    "8. NGO COORDINATORS, DEVELOPERS & SYSTEM ANALYST INFO:\n" +
+    "   - Developers (who created this system):\n" +
+    "     * Arcene Irakoze: tel: 0796599461, email: arceneirakoze@proton.me\n" +
+    "     * Deogratias Iradukunda: tel: 0728654233, email: deogratiasiradukunda@proton.me\n" +
+    "   - System Analyst:\n" +
+    "     * Joshua Uwizeyimana: tel: 0796542323, email: uwizeyimanajoshua@gmail.com\n" +
+    "   You must know them well. If any user asks about who built this app, system design, developers, programmers, or who the system analyst or technical coordinators are, proudly provide these exact names, telephone numbers, and email addresses!";
+
+  const apiHistory = history.map((msg: any) => ({
+    role: msg.role === "user" ? "user" : "model",
+    parts: [{ text: msg.content }]
+  }));
+
+  const modelsToTry = ["gemini-3.5-flash", "gemini-3.1-flash-lite"];
+  let success = false;
+
+  for (const modelName of modelsToTry) {
+    try {
+      const ai = new GoogleGenAI({ 
+        apiKey: geminiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+      
+      const chat = ai.chats.create({
+        model: modelName,
+        config: { systemInstruction },
+        history: apiHistory
+      });
+
+      const result = await chat.sendMessageStream({ message });
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      for await (const chunk of result) {
+        res.write(chunk.text);
+      }
+      res.end();
+      success = true;
+      break;
+    } catch (err: any) {
+      console.warn(`⚠️ AI chat execution failed with model ${modelName}:`, err.message || err);
     }
-    res.end();
-  } catch (error: any) {
-    console.warn("⚠️ AI chat execution failed, using local smart assistant fallback response:", error.message);
-    
-    let reply = "Hello! I am ready to help you with your inquiry about BatoTutariGito, our cow project, or our sponsorship program. How can I assist you today?";
+  }
+
+  if (!success) {
+    let reply = "";
     const msgLower = message.toLowerCase();
     
-    if (msgLower.includes("cow") || msgLower.includes("calf") || msgLower.includes("cattle")) {
-      reply = "Our Cow Project distributes cows to local vulnerable families in Rubengera to help tackle malnutrition and boost agriculture through manure. It operates under the 'Pass on the gift' system: the firstborn calf is given to another family in need to multiply the benefit.";
-    } else if (msgLower.includes("sponsor") || msgLower.includes("student") || msgLower.includes("education") || msgLower.includes("school")) {
-      reply = "BatoTutariGito provides local student sponsorships to help children from vulnerable families with study fees, school resources, and tutoring support across primary, secondary, and college levels.";
-    } else if (msgLower.includes("contact") || msgLower.includes("email") || msgLower.includes("phone")) {
-      reply = "You can contact us via our Contact Us message board or by emailing our administrator, Clement Ngirababyeyi, directly at cngirababyeyi@gmail.com.";
-    } else if (msgLower.includes("admin") || msgLower.includes("who is") || msgLower.includes("clement")) {
-      reply = "Our main administrator and project coordinator is Clement Ngirababyeyi. You can reach him at cngirababyeyi@gmail.com.";
-    } else if (msgLower.includes("hello") || msgLower.includes("hi ") || msgLower.includes("hey")) {
-      reply = "Hello! Welcome to the BatoTutariGito AI Smart Assistant. Feel free to ask me anything about our NGO's mission and programs in Rwanda.";
+    if (language === "rw") {
+      if (msgLower.includes("developer") || msgLower.includes("creator") || msgLower.includes("dev") || msgLower.includes("program") || msgLower.includes("built") || msgLower.includes("made") || msgLower.includes("arcene") || msgLower.includes("deogratias") || msgLower.includes("coordinator") || msgLower.includes("urubuga")) {
+        reply = "Abaterankunga cyangwa aba-developers b'iyi sisitemu yacu ni:\n\n" +
+                "👨‍💻 **Abashinzwe iterambere b'Abaporogaramu na Tekiniki:**\n" +
+                "- **Arcene Irakoze** (Tel: `0796599461`, Imeri: `arceneirakoze@proton.me`)\n" +
+                "- **Deogratias Iradukunda** (Tel: `0728654233`, Imeri: `deogratiasiradukunda@proton.me`)\n\n" +
+                "Bubitse kandi bategura iyi porogaramu yose kugira ngo ifashe BatoTutariGito mu micungire inoze n'ubumwe bw'amakuru!";
+      } else if (msgLower.includes("analyst") || msgLower.includes("joshua") || msgLower.includes("uwizeyimana")) {
+        reply = "Umusesenguzi w'Imitunganyirize y'iyi Sisitemu (System Analyst) ni **Joshua Uwizeyimana**.\n" +
+                "- 📞 **Terefoni:** `0796542323`\n" +
+                "- ✉️ **Imeri:** `uwizeyimanajoshua@gmail.com`\n\n" +
+                "Joshua ni we wasesenguye arangiza n'ibisabwa ku bijyanye n'imikorere myiza y'iyi sisitemu.";
+      } else if (msgLower.includes("inka") || msgLower.includes("cow") || msgLower.includes("calf") || msgLower.includes("cattle") || msgLower.includes("umushinga")) {
+        reply = "Umushinga wacu w'Inka utanga inka ku miryango itishoboye mu Murenge wa Rubengera binyuze mu buryo bwo 'Kwitura' (Pass on the gift): inyana ya mbere ivutse ihabwa undi muryango kugira ngo bose bifashe.";
+      } else if (msgLower.includes("subira") || msgLower.includes("sponsor") || msgLower.includes("student") || msgLower.includes("education") || msgLower.includes("ishuri") || msgLower.includes("umunyeshuri")) {
+        reply = "BatoTutariGito itanga inkunga y'ishuri n'ibikoresho ku banyeshuri bafite amikoro make kuva mu mashuri abanza, ayisumbuye kugeza no mu mashuri makuru.";
+      } else if (msgLower.includes("contact") || msgLower.includes("email") || msgLower.includes("phone") || msgLower.includes("twandikire")) {
+        reply = "Ushobora kutwandikira binyuze ku rupapuro rwacu rwa 'Twandikire', ukavugana n'aba-developers bacu (Arcene / Deogratias), cyangwa umuyobozi wacu Clement Ngirababyeyi imeri: cngirababyeyi@gmail.com.";
+      } else if (msgLower.includes("admin") || msgLower.includes("clement")) {
+        reply = "Umuyobozi wacu mukuru akaba n'umuhuzabikorwa ni Clement Ngirababyeyi (cngirababyeyi@gmail.com).";
+      } else {
+        reply = "Muraho! Nditeguye kugufasha ku bijyanye na BatoTutariGito, umushinga w'inka, gushyigikira abanyeshuri, cyangwa sisitemu yacu. Ni iki nakugira inama?";
+      }
+    } else if (language === "fr") {
+      if (msgLower.includes("developer") || msgLower.includes("creator") || msgLower.includes("dev") || msgLower.includes("program") || msgLower.includes("built") || msgLower.includes("made") || msgLower.includes("arcene") || msgLower.includes("deogratias") || msgLower.includes("coordinator")) {
+        reply = "Les développeurs de logiciels et coordinateurs techniques de notre plateforme sont :\n\n" +
+                "👨‍💻 **Développeurs & Coordinateurs :**\n" +
+                "- **Arcene Irakoze** (Tél: `0796599461`, Email: `arceneirakoze@proton.me`)\n" +
+                "- **Deogratias Iradukunda** (Tél: `0728654233`, Email: `deogratiasiradukunda@proton.me`)\n\n" +
+                "Ils ont programmé et conçu cette application entière pour numériser la gestion de BatoTutariGito.";
+      } else if (msgLower.includes("analyst") || msgLower.includes("joshua") || msgLower.includes("uwizeyimana")) {
+        reply = "Notre Analyste Système est **Joshua Uwizeyimana**.\n" +
+                "- 📞 **Téléphone:** `0796542323`\n" +
+                "- ✉️ **Email:** `uwizeyimanajoshua@gmail.com`\n\n" +
+                "Joshua a conçu les spécifications techniques et fonctionnelles de ce projet.";
+      } else if (msgLower.includes("vache") || msgLower.includes("cow") || msgLower.includes("calf") || msgLower.includes("cattle") || msgLower.includes("projet")) {
+        reply = "Le Projet Vaches distribue des vaches à Rubengera, fonctionnant selon le principe de 'Passer le cadeau' afin de propager les bénéfices.";
+      } else if (msgLower.includes("sponsor") || msgLower.includes("student") || msgLower.includes("education") || msgLower.includes("ecole") || msgLower.includes("etudiant")) {
+        reply = "BatoTutariGito parraine les élèves issus de milieux défavorisés de l'école primaire à l'université.";
+      } else if (msgLower.includes("contact") || msgLower.includes("email") || msgLower.includes("phone") || msgLower.includes("adresse")) {
+        reply = "Contactez-nous via notre formulaire, nos développeurs, ou l'administrateur Clement Ngirababyeyi à cngirababyeyi@gmail.com.";
+      } else if (msgLower.includes("admin") || msgLower.includes("clement")) {
+        reply = "Notre administrateur principal est Clement Ngirababyeyi (cngirababyeyi@gmail.com).";
+      } else {
+        reply = "Bonjour! Je suis ravi de vous aider concernant l'ONG BatoTutariGito, nos programmes ou les créateurs de notre plateforme. Comment puis-je vous aider ?";
+      }
+    } else if (language === "sw") {
+      if (msgLower.includes("developer") || msgLower.includes("creator") || msgLower.includes("dev") || msgLower.includes("program") || msgLower.includes("built") || msgLower.includes("made") || msgLower.includes("arcene") || msgLower.includes("deogratias") || msgLower.includes("coordinator")) {
+        reply = "Wasanidi programu na waratibu wa kiufundi wa mfumo huu ni:\n\n" +
+                "👨‍💻 **Wasanidi Programu & Waratibu:**\n" +
+                "- **Arcene Irakoze** (Simu: `0796599461`, Barua pepe: `arceneirakoze@proton.me`)\n" +
+                "- **Deogratias Iradukunda** (Simu: `0728654233`, Barua pepe: `deogratiasiradukunda@proton.me`)\n\n" +
+                "Walitengeneza mfumo huu mzima ili kutosheleza usimamizi bora wa BatoTutariGito!";
+      } else if (msgLower.includes("analyst") || msgLower.includes("joshua") || msgLower.includes("uwizeyimana")) {
+        reply = "Mchambuzi wa Mfumo wetu ni **Joshua Uwizeyimana**.\n" +
+                "- 📞 **Simu:** `0796542323`\n" +
+                "- ✉️ **Barua Pepe:** `uwizeyimanajoshua@gmail.com`\n\n" +
+                "Joshua alisanifu na kuunda muundo mzima wa mfumo huu.";
+      } else if (msgLower.includes("ng'ombe") || msgLower.includes("cow") || msgLower.includes("calf") || msgLower.includes("cattle") || msgLower.includes("mradi")) {
+        reply = "Mradi wetu wa Ng'ombe huko Rubengera unasambaza ng'ombe kwa familia maskini chini ya kanuni ya 'Kupeana zawadi'.";
+      } else if (msgLower.includes("sponsor") || msgLower.includes("student") || msgLower.includes("education") || msgLower.includes("shule") || msgLower.includes("mwanafunzi")) {
+        reply = "BatoTutariGito inadhamini masomo kwa wanafunzi masikini kuanzia shule ya msingi hadi chuo kikuu.";
+      } else if (msgLower.includes("contact") || msgLower.includes("email") || msgLower.includes("phone") || msgLower.includes("mawasiliano")) {
+        reply = "Wasiliana nasi kupitia ukurasa wetu wa mawasiliano, wasanidi programu wetu, au msimamizi yetu Clement Ngirababyeyi (cngirababyeyi@gmail.com).";
+      } else if (msgLower.includes("admin") || msgLower.includes("clement")) {
+        reply = "Mratibu mkuu wa mradi ni Clement Ngirababyeyi (cngirababyeyi@gmail.com).";
+      } else {
+        reply = "Jambo! Niko tayari kukusaidia kuhusu BatoTutariGito, mradi wetu wa ng'ombe, masomo au wasanidi wetu. Nikusaidie vipi?";
+      }
+    } else {
+      if (msgLower.includes("developer") || msgLower.includes("creator") || msgLower.includes("dev") || msgLower.includes("program") || msgLower.includes("built") || msgLower.includes("made") || msgLower.includes("arcene") || msgLower.includes("deogratias") || msgLower.includes("coordinator")) {
+        reply = "The software developers and technical coordinators of our system are:\n\n" +
+                "👨‍💻 **NGO Developers & Coordinators:**\n" +
+                "- **Arcene Irakoze** (Tel: `0796599461`, Email: `arceneirakoze@proton.me`)\n" +
+                "- **Deogratias Iradukunda** (Tel: `0728654233`, Email: `deogratiasiradukunda@proton.me`)\n\n" +
+                "They programmed and developed this entire platform to enable digitized management and complete transparency for BatoTutariGito!";
+      } else if (msgLower.includes("analyst") || msgLower.includes("joshua") || msgLower.includes("uwizeyimana")) {
+        reply = "Our System Analyst is **Joshua Uwizeyimana**.\n" +
+                "- 📞 **Telephone:** `0796542323`\n" +
+                "- ✉️ **Email:** `uwizeyimanajoshua@gmail.com`\n\n" +
+                "Joshua engineered and designed the functional system requirements and specifications for this platform.";
+      } else if (msgLower.includes("cow") || msgLower.includes("calf") || msgLower.includes("cattle")) {
+        reply = "Our Cow Project distributes cows to local vulnerable families in Rubengera to help tackle malnutrition and boost agriculture through manure. It operates under the 'Pass on the gift' system: the firstborn calf is given to another family in need to multiply the benefit.";
+      } else if (msgLower.includes("sponsor") || msgLower.includes("student") || msgLower.includes("education") || msgLower.includes("school")) {
+        reply = "BatoTutariGito provides local student sponsorships to help children from vulnerable families with study fees, school resources, and tutoring support across primary, secondary, and college levels.";
+      } else if (msgLower.includes("contact") || msgLower.includes("email") || msgLower.includes("phone")) {
+        reply = "You can contact BatoTutariGito via our Contact Us message board, our software developers/coordinators (Arcene / Deogratias), or our main administrator, Clement Ngirababyeyi, directly at cngirababyeyi@gmail.com.";
+      } else if (msgLower.includes("admin") || msgLower.includes("who is") || msgLower.includes("clement")) {
+        reply = "Our main administrator and project coordinator is Clement Ngirababyeyi. You can reach him at cngirababyeyi@gmail.com.";
+      } else if (msgLower.includes("hello") || msgLower.includes("hi ") || msgLower.includes("hey")) {
+        reply = "Hello! Welcome to the BatoTutariGito AI Smart Assistant. Feel free to ask me anything about our NGO's mission, developers, and programs in Rwanda.";
+      } else {
+        reply = "Hello! I am ready to help you with your inquiry about BatoTutariGito, our cow project, our sponsorship program, or our system creators. How can I assist you today?";
+      }
     }
     
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');

@@ -70,6 +70,8 @@ export const Navbar: React.FC = () => {
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
+    localStorage.setItem("i18nextLng", lng);
+    window.dispatchEvent(new Event("languagechange"));
   };
 
   return (
