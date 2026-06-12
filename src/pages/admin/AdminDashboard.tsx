@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { format, addYears } from "date-fns";
 import { useAuth } from "../../context/AuthContext";
 import { useTranslation } from "react-i18next";
+import { exportReportDataset } from "../../lib/exportUtils";
 
 // --- Sub-components ---
 
@@ -170,6 +171,7 @@ export const AdminDashboard: React.FC = () => {
     },
     { id: "shares", label: "Shares", icon: <Coins size={20} /> },
     { id: "expenses", label: "Expenses", icon: <Coins size={20} /> },
+    { id: "reports", label: "Export Reports", icon: <Download size={20} /> },
     { id: "settings", label: "Settings", icon: <Settings size={20} /> },
   ];
 
@@ -202,12 +204,58 @@ export const AdminDashboard: React.FC = () => {
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white capitalize">
-              {activeTab === "settings" ? "Account Settings" : activeTab}
+              {activeTab === "settings" ? "Account Settings" : activeTab === "reports" ? "Export Reports Center" : activeTab}
             </h1>
             <p className="text-slate-500 dark:text-slate-400">Welcome back, Administrator</p>
           </div>
-          {activeTab !== "settings" && (
-            <div className="flex items-center gap-4">
+          {activeTab !== "settings" && activeTab !== "reports" && (
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Quick Export triggers for the active tab */}
+              {["students", "graduated", "families", "cows", "calves", "shares", "expenses", "support"].includes(activeTab) && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const mapping: Record<string, any[]> = {
+                        students: data.students,
+                        graduated: data.graduated,
+                        families: data.families,
+                        cows: data.cows,
+                        calves: data.calves,
+                        shares: data.shares,
+                        expenses: data.expenses,
+                        support: data.supportRecords,
+                      };
+                      exportReportDataset(activeTab, mapping[activeTab] || [], "csv");
+                    }}
+                    title="Export current list to CSV"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-105 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+                  >
+                    <Download size={14} />
+                    <span className="hidden sm:inline">Export CSV</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const mapping: Record<string, any[]> = {
+                        students: data.students,
+                        graduated: data.graduated,
+                        families: data.families,
+                        cows: data.cows,
+                        calves: data.calves,
+                        shares: data.shares,
+                        expenses: data.expenses,
+                        support: data.supportRecords,
+                      };
+                      exportReportDataset(activeTab, mapping[activeTab] || [], "pdf");
+                    }}
+                    title="Export current list to PDF"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-105 dark:bg-red-950/20 dark:hover:bg-red-950/30 text-red-650 dark:text-red-400 border border-red-200 dark:border-red-900 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+                  >
+                    <Download size={14} />
+                    <span className="hidden sm:inline">Export PDF</span>
+                  </button>
+                  <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
+                </div>
+              )}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input 
@@ -219,7 +267,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
               <button 
                  onClick={() => { setSelectedItem(null); setIsModalOpen(true); }}
-                 className="bg-blue-600 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-lg hover:bg-blue-700 transition-all flex items-center gap-2"
+                 className="bg-blue-600 text-white px-6 py-2 rounded-xl text-sm font-bold shadow-lg hover:bg-blue-700 transition-all flex items-center gap-2 cursor-pointer"
               >
                 <Plus size={18} />
                 Add New
@@ -327,6 +375,9 @@ export const AdminDashboard: React.FC = () => {
             onEdit={(exp: any) => { setSelectedItem(exp); setIsModalOpen(true); }}
             onDelete={(id: string) => handleDelete("expenses", id)}
           />
+        )}
+        {activeTab === "reports" && (
+          <ReportsCenter data={data} />
         )}
         {activeTab === "settings" && (
           <SettingsPanel onPasswordChanged={fetchData} />
@@ -450,6 +501,179 @@ const Overview = ({ data }: any) => {
             Tracking animal medicine and glasses expenses continuously calculates exact profit & loss margins across your cattle operations.
           </p>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const ReportsCenter = ({ data }: { data: any }) => {
+  const reports = [
+    {
+      id: "students",
+      title: "Students",
+      description: "Lists all local active sponsored students, their departments, contact details, and sector/cell/village physical address.",
+      count: data.students?.length || 0,
+      color: "border-blue-200 dark:border-blue-900/50 hover:bg-blue-50/20 dark:hover:bg-blue-950/10",
+      textColor: "text-blue-600 dark:text-blue-400",
+      iconColor: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
+    },
+    {
+      id: "graduated",
+      title: "Graduates",
+      description: "Official achievement records for graduates who successfully completed their academic sponsorship levels.",
+      count: data.graduated?.length || 0,
+      color: "border-purple-200 dark:border-purple-900/50 hover:bg-purple-50/20 dark:hover:bg-purple-950/10",
+      textColor: "text-purple-600 dark:text-purple-400",
+      iconColor: "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400"
+    },
+    {
+      id: "families",
+      title: "Families",
+      description: "Registers community beneficiary families with username, head of family name, telephone, sector, cell, and village.",
+      count: data.families?.length || 0,
+      color: "border-red-200 dark:border-red-900/50 hover:bg-red-50/20 dark:hover:bg-red-950/10",
+      textColor: "text-red-600 dark:text-red-400",
+      iconColor: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400"
+    },
+    {
+      id: "cows",
+      title: "Cow Project",
+      description: "Auditing registry for cows indicating date received, purchase price, tag number, and their assigned source families.",
+      count: data.cows?.length || 0,
+      color: "border-green-200 dark:border-green-900/50 hover:bg-green-50/20 dark:hover:bg-green-950/10",
+      textColor: "text-green-600 dark:text-green-400",
+      iconColor: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400"
+    },
+    {
+      id: "calves",
+      title: "Calves Transfers",
+      description: "Pass-on-a-cow replication logs tracking origin cow tags, donor families, recipient destination families, and transfer dates.",
+      count: data.calves?.length || 0,
+      color: "border-yellow-200 dark:border-yellow-900/50 hover:bg-yellow-50/10 dark:hover:bg-yellow-950/10",
+      textColor: "text-yellow-600 dark:text-yellow-400",
+      iconColor: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950  dark:text-yellow-450"
+    },
+    {
+      id: "support",
+      title: "Community Support",
+      description: "Registers community-focused and individual distributions of goats, school materials, food, cows, and support.",
+      count: data.supportRecords?.length || 0,
+      color: "border-teal-200 dark:border-teal-900/50 hover:bg-teal-50/10 dark:hover:bg-teal-900/10",
+      textColor: "text-teal-600 dark:text-teal-400",
+      iconColor: "bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-450"
+    },
+    {
+      id: "shares",
+      title: "Shares",
+      description: "Asset distribution shares ledger tracking recipients, custom share amounts, original issue dates, and standard 3-year expiry dates.",
+      count: data.shares?.length || 0,
+      color: "border-amber-200 dark:border-amber-900/50 hover:bg-amber-50/10 dark:hover:bg-amber-950/10",
+      textColor: "text-amber-600 dark:text-amber-400",
+      iconColor: "bg-amber-100 text-amber-700 dark:bg-amber-950  dark:text-amber-450"
+    },
+    {
+      id: "expenses",
+      title: "Expenses",
+      description: "Operational and logistical expenditure logs tracking cow tags, expense type categorization, RWF amounts, and dates incurred.",
+      count: data.expenses?.length || 0,
+      color: "border-emerald-200 dark:border-emerald-900/50 hover:bg-emerald-50/10 dark:hover:bg-emerald-950/10",
+      textColor: "text-emerald-600 dark:text-emerald-400",
+      iconColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
+    }
+  ];
+
+  return (
+    <div className="space-y-6 animate-fade-in shadow-xs">
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2 max-w-xl">
+          <h2 className="text-2xl font-black tracking-tight font-sans">Official Record Keeping Export Center</h2>
+          <p className="text-sm text-blue-100 leading-relaxed font-semibold">
+            Generate and archive high-fidelity regulatory CSV tables or styled PDF documents for BatoTutariGito NGO. Our exports use standardized formulas to display calculations (medicine expenses, capital shares) instantly.
+          </p>
+        </div>
+        <div className="bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl shrink-0 text-center md:text-left">
+          <p className="text-[10px] font-bold tracking-widest uppercase text-blue-200">Total Systems Auditing</p>
+          <p className="text-3xl font-extrabold font-mono mt-0.5">8 Reports</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {reports.map((report) => (
+          <div 
+            key={report.id} 
+            className={`bg-white dark:bg-slate-900 rounded-3xl border ${report.color} p-6 shadow-sm flex flex-col justify-between transition-all duration-300 group hover:shadow-md`}
+          >
+            <div className="space-y-4 mb-4">
+              <div className="flex items-center justify-between">
+                <div className={`p-3 rounded-2xl ${report.iconColor} transition-transform group-hover:scale-105 duration-200`}>
+                  <Download size={20} />
+                </div>
+                <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-bold font-mono text-slate-600 dark:text-slate-400">
+                  {report.count} Records
+                </span>
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                  {report.title}
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-semibold">
+                  {report.description}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mt-2 border-t border-slate-100 dark:border-slate-800/60 pt-4 text-xs font-bold font-sans">
+              <button 
+                onClick={() => exportReportDataset(
+                  report.id, 
+                  report.id === "students" 
+                    ? data.students 
+                    : report.id === "graduated" 
+                    ? data.graduated 
+                    : report.id === "families" 
+                    ? data.families 
+                    : report.id === "cows" 
+                    ? data.cows 
+                    : report.id === "calves" 
+                    ? data.calves 
+                    : report.id === "shares" 
+                    ? data.shares 
+                    : report.id === "expenses" 
+                    ? data.expenses 
+                    : data.supportRecords, 
+                  "csv"
+                )}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300 cursor-pointer"
+              >
+                Export CSV
+              </button>
+              <button 
+                onClick={() => exportReportDataset(
+                  report.id, 
+                  report.id === "students" 
+                    ? data.students 
+                    : report.id === "graduated" 
+                    ? data.graduated 
+                    : report.id === "families" 
+                    ? data.families 
+                    : report.id === "cows" 
+                    ? data.cows 
+                    : report.id === "calves" 
+                    ? data.calves 
+                    : report.id === "shares" 
+                    ? data.shares 
+                    : report.id === "expenses" 
+                    ? data.expenses 
+                    : data.supportRecords, 
+                  "pdf"
+                )}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-sm cursor-pointer"
+              >
+                Generate PDF
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

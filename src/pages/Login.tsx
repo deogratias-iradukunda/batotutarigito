@@ -158,7 +158,7 @@ export const Login: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-800 transition-all font-medium"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white transition-all font-medium"
               />
             </div>
           </div>
@@ -183,7 +183,7 @@ export const Login: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-12 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-800 transition-all font-medium"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-12 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white transition-all font-medium"
                 />
                 <button 
                   type="button"
@@ -282,7 +282,7 @@ export const Login: React.FC = () => {
                         value={googlePassword}
                         onChange={(e) => setGooglePassword(e.target.value)}
                         placeholder=""
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-sm text-slate-900 dark:text-white focus:bg-white font-medium"
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-sm text-slate-900 dark:text-white font-medium"
                       />
                     </div>
                     <div className="flex space-x-3 pt-2">
@@ -352,7 +352,7 @@ export const Login: React.FC = () => {
                         value={customGoogleEmail}
                         onChange={(e) => setCustomGoogleEmail(e.target.value)}
                         placeholder="your-email@gmail.com"
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-sm text-slate-900 dark:text-white focus:bg-white font-medium"
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-sm text-slate-900 dark:text-white font-medium"
                       />
                     </div>
                     <div className="flex space-x-3 pt-2">

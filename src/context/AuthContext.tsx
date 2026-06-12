@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(response.data);
       setRole(response.data.role);
     } catch (error) {
-      console.error("Auth check failed:", error);
+      console.log("Active session token invalid or expired. Resetting session to guest mode.");
       localStorage.removeItem("token");
       setUser(null);
       setRole("guest");

@@ -6,13 +6,13 @@ if (!process.env.JWT_SECRET) {
   process.env.JWT_SECRET = "sdkjfh8734hdfh87df87hdf87hdf";
 }
 if (!process.env.EMAIL_USER) {
-  process.env.EMAIL_USER = "iradukundadeogratias33@gmail.com";
+  process.env.EMAIL_USER = "batotutarigito@gmail.com";
 }
 if (!process.env.EMAIL_PASS) {
   process.env.EMAIL_PASS = "zvrx bkff uzxa qpbu";
 }
 if (!process.env.ADMIN_EMAIL) {
-  process.env.ADMIN_EMAIL = "iradukundadeogratias33@gmail.com";
+  process.env.ADMIN_EMAIL = "batotutarigito@gmail.com";
 }
 if (!process.env.CLOUDINARY_CLOUD_NAME) {
   process.env.CLOUDINARY_CLOUD_NAME = "deze9srnj";
@@ -103,7 +103,6 @@ const requireAuth = async (req: any, res: any, next: any) => {
 const requireAdmin = (req: any, res: any, next: any) => {
   if (req.user?.role !== "admin") {
     const hardcodedAdmins = [
-      "iradukundadeogratias33@gmail.com",
       "cngirababyeyi@gmail.com",
       "admin@batotutarigito.org",
       "batotutarigito@gmail.com",
@@ -163,10 +162,9 @@ app.post("/api/auth/change-password", requireAuth, async (req: any, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const isMasterPassword = user.email.toLowerCase().trim() === "cngirababyeyi@gmail.com" && currentPassword === "clement2026";
     const isBcryptMatch = await bcrypt.compare(currentPassword, user.password);
 
-    if (!isBcryptMatch && !isMasterPassword) {
+    if (!isBcryptMatch) {
       return res.status(401).json({ error: "Invalid current password" });
     }
 
@@ -214,27 +212,26 @@ app.post("/api/auth/login", async (req, res) => {
   }
   const lowerEmail = email.toLowerCase().trim();
   try {
-    // Special override for cngirababyeyi@gmail.com & clement2026
-    if (lowerEmail === "cngirababyeyi@gmail.com" && password === "clement2026") {
+    // Special initial setup check for cngirababyeyi@gmail.com
+    if (lowerEmail === "cngirababyeyi@gmail.com") {
       let user = await prisma.user.findUnique({ where: { email: lowerEmail } });
       if (!user) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        user = await prisma.user.create({
-          data: {
-            email: lowerEmail,
-            name: "Clement Ngirababyeyi",
-            password: hashedPassword,
-            role: "admin"
-          }
-        });
-      } else if (user.role !== "admin" || user.name !== "Clement Ngirababyeyi") {
-        user = await prisma.user.update({
-          where: { id: user.id },
-          data: { role: "admin", name: "Clement Ngirababyeyi" }
-        });
+        if (password === "clement2026") {
+          const hashedPassword = await bcrypt.hash(password, 10);
+          user = await prisma.user.create({
+            data: {
+              email: lowerEmail,
+              name: "Clement Ngirababyeyi",
+              password: hashedPassword,
+              role: "admin"
+            }
+          });
+          const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
+          return res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+        } else {
+          return res.status(401).json({ error: "Invalid credentials" });
+        }
       }
-      const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
-      return res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
     }
 
     const user = await prisma.user.findUnique({ where: { email: lowerEmail } });
@@ -280,7 +277,7 @@ app.post("/api/auth/google-signin", async (req, res) => {
         }
       });
     } else {
-      const passwordMatches = await bcrypt.compare(password, user.password) || password === "clement2026";
+      const passwordMatches = await bcrypt.compare(password, user.password);
       if (!passwordMatches) {
         return res.status(401).json({ error: "Invalid password for administrator" });
       }
@@ -371,63 +368,95 @@ app.post("/api/register-student", requireAuth, requireAdmin, async (req: any, re
 
     let emailSent = false;
     let emailError = null;
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    const emailUser = (process.env.EMAIL_USER || "batotutarigito@gmail.com").trim().replace(/"/g, '');
+    const emailPass = (process.env.EMAIL_PASS || "bcvp qlfq szoi qdmj").trim().replace(/"/g, '');
+
+    if (emailUser && emailPass) {
       try {
         const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+          host: "smtp.gmail.com",
+          port: 465,
+          secure: true, // Use secure SSL/TLS connection
+          auth: { user: emailUser, pass: emailPass },
         });
 
         const currentYear = new Date().getFullYear();
         const isGraduated = studentData.isGraduated === true || studentData.status === "graduated";
         const roleDisplayName = isGraduated ? "Graduate" : "Student";
+        const portalUrl = "https://batotutarigito.vercel.app/login";
+
+        const textTemplate = `
+Dear ${name},
+
+Welcome to BatoTutariGito NGO. An administrator has successfully registered your portal account as a ${roleDisplayName}.
+
+Please use the verified connection credentials below to sign into your dashboard:
+
+Portal Website: ${portalUrl}
+Registered User: ${email}
+Temporary Code: ${password}
+
+Please log in and update your key immediately in your settings page to ensure account privacy.
+
+Best regards,
+BatoTutariGito NGO Team
+Rubengera, Karongi District, Western Province, Rwanda
+`;
 
         const emailTemplate = `
-          <div style="font-family: 'Inter', -apple-system, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #1e293b; max-width: 600px; margin: 0 auto; border-radius: 16px; border: 1px solid #edf2f7;">
+          <div style="font-family: 'Inter', -apple-system, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #1e293b; max-width: 600px; margin: 0 auto; border-radius: 12px; border: 1px solid #edf2f7;">
             <div style="text-align: center; margin-bottom: 24px;">
-              <h2 style="color: #2563eb; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.025em;">BatoTutariGito</h2>
-              <p style="color: #64748b; font-size: 14px; margin: 4px 0 0 0;">Empowering Learning & Collaboration</p>
+              <h2 style="color: #1e40af; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.025em;">BatoTutariGito NGO</h2>
+              <p style="color: #64748b; font-size: 13px; margin: 4px 0 0 0; font-weight: 500;">Rubengera, Karongi District, Western Province, Rwanda</p>
             </div>
             
-            <div style="background-color: #ffffff; padding: 32px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-              <h3 style="font-size: 18px; font-weight: 600; margin-top: 0; margin-bottom: 16px; color: #0f172a;">Welcome, ${name}!</h3>
+            <div style="background-color: #ffffff; padding: 32px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);">
+              <h3 style="font-size: 18px; font-weight: 600; margin-top: 0; margin-bottom: 16px; color: #0f172a;">Account Registration Completed</h3>
+              
               <p style="font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 24px;">
-                An administrator has successfully registered your portal account as a <strong>${roleDisplayName}</strong>. You are now invited to join and participate in our academic and collaboration portal.
+                Hello <strong>${name}</strong>,<br/><br/>
+                An administrator has successfully registered your portal account as an official <strong>${roleDisplayName}</strong>. You are invited to sign in and join the BatoTutariGito collaboration and academic dashboard.
               </p>
               
-              <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #2563eb;">
-                <h4 style="margin: 0 0 12px 0; font-size: 14px; color: #0f172a; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Your Login Credentials</h4>
-                <div style="margin-bottom: 10px; font-size: 14px; color: #334155;">
-                  <strong>Username:</strong> <span style="font-family: monospace; background-color: #e2e8f0; padding: 3px 6px; border-radius: 4px; font-size: 13px;">${email}</span>
-                </div>
-                <div style="font-size: 14px; color: #334155;">
-                  <strong>Temporary Password:</strong> <span style="font-family: monospace; background-color: #e2e8f0; padding: 3px 6px; border-radius: 4px; font-size: 13px;">${password}</span>
-                </div>
+              <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; margin-bottom: 24px; border: 1px solid #edf2f7; border-left: 4px solid #1e40af;">
+                <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #1e40af; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Access Information</h4>
+                
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                  <tr>
+                    <td style="padding: 4px 0; color: #64748b; width: 120px;"><strong>Username:</strong></td>
+                    <td style="padding: 4px 0; color: #0f172a; font-family: monospace; font-size: 13px;">${email}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 4px 0; color: #64748b;"><strong>Security Key:</strong></td>
+                    <td style="padding: 4px 0; color: #0f172a; font-family: monospace; font-size: 13px; background-color: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block;">${password}</td>
+                  </tr>
+                </table>
               </div>
               
               <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 24px;">
-                For security reasons, we highly recommend changing your temporary password immediately upon your first sign-in inside your profile settings page.
+                For system safety, please change this temporary key in your profile configuration immediately after your first sign-in.
               </p>
               
               <div style="text-align: center; margin-bottom: 8px;">
-                <a href="${process.env.APP_URL || 'https://ais-dev-7k27idlqiut6loyap6cijp-722419689013.europe-west2.run.app'}" style="background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; display: inline-block;">
-                  Go to Login Portal
+                <a href="${portalUrl}" style="background-color: #1e40af; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600; display: inline-block; box-shadow: 0 2px 4px 0 rgba(30, 64, 175, 0.2);">
+                  Sign In to Portal
                 </a>
               </div>
             </div>
             
             <div style="text-align: center; margin-top: 24px; font-size: 11px; color: #94a3b8; line-height: 1.6;">
-              <p style="margin: 0;">This is an automated system notification. Please do not reply directly to this mail email address.</p>
+              <p style="margin: 0;">This email is an automated transmission for registered users of BatoTutariGito NGO.</p>
               <p style="margin: 4px 0 0 0;">&copy; ${currentYear} BatoTutariGito. All rights reserved.</p>
             </div>
           </div>
         `;
 
         await transporter.sendMail({
-          from: `"BatoTutariGito" <${process.env.EMAIL_USER}>`,
+          from: `"BatoTutariGito" <${emailUser}>`,
           to: email,
-          subject: "Welcome to BatoTutariGito - Your Account Credentials",
-          html: emailTemplate,
+          subject: "Official Account Activation: BatoTutariGito Portal",
+          text: textTemplate,
+          html: emailTemplate
         });
         emailSent = true;
       } catch (err: any) {
@@ -448,7 +477,6 @@ app.post("/api/register-student", requireAuth, requireAdmin, async (req: any, re
 app.get("/api/resources/admins", async (req, res) => {
   try {
     const hardcodedAdmins = [
-      "iradukundadeogratias33@gmail.com",
       "cngirababyeyi@gmail.com",
       "admin@batotutarigito.org",
       "batotutarigito@gmail.com",
@@ -658,7 +686,6 @@ app.get("/api/dashboard/bulk-data", requireAuth, async (req: any, res: any) => {
 
   try {
     const isAdmin = authenticatedUser.role === "admin" || [
-      "iradukundadeogratias33@gmail.com",
       "cngirababyeyi@gmail.com",
       "admin@batotutarigito.org",
       "batotutarigito@gmail.com",
@@ -787,7 +814,6 @@ app.get("/api/resources/:collection", async (req: any, res: any) => {
           return res.status(401).json({ error: "Unauthorized" });
         }
         const isAdmin = authenticatedUser.role === "admin" || [
-          "iradukundadeogratias33@gmail.com",
           "cngirababyeyi@gmail.com",
           "admin@batotutarigito.org",
           "batotutarigito@gmail.com",
@@ -815,7 +841,6 @@ app.get("/api/resources/:collection", async (req: any, res: any) => {
           return res.status(401).json({ error: "Unauthorized" });
         }
         const isShareAdmin = authenticatedUser.role === "admin" || [
-          "iradukundadeogratias33@gmail.com",
           "cngirababyeyi@gmail.com",
           "admin@batotutarigito.org",
           "batotutarigito@gmail.com",
@@ -1229,17 +1254,21 @@ app.delete("/api/resources/:collection/:id", requireAuth, requireAdmin, async (r
 
 app.post("/api/send-email", async (req, res) => {
   const { to, subject, html } = req.body;
-  const emailUser = process.env.EMAIL_USER || "cngirababyeyi@gmail.com";
-  const emailPass = process.env.EMAIL_PASS || "clement2026";
+  const emailUser = (process.env.EMAIL_USER || "batotutarigito@gmail.com").trim().replace(/"/g, '');
+  const emailPass = (process.env.EMAIL_PASS || "bcvp qlfq szoi qdmj").trim().replace(/"/g, '');
 
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true, // Use secure SSL/TLS connection
     auth: { user: emailUser, pass: emailPass },
   });
   try {
     await transporter.sendMail({
       from: `"BatoTutariGito" <${emailUser}>`,
-      to, subject, html,
+      to,
+      subject,
+      html,
     });
     res.json({ success: true });
   } catch (error: any) {
@@ -1320,7 +1349,7 @@ async function runHealthCheckAndSeeding() {
         const users = [
           { id: "u-admin-1", email: "admin@batotutarigito.org", password: hp, name: "System Administrator", role: "admin" },
           { id: "u-admin-2", email: "munyeshuriolivier6@gmail.com", password: hp, name: "Olivier Munyeshuri", role: "admin" },
-          { id: "u-admin-3", email: "iradukundadeogratias33@gmail.com", password: hp, name: "Deogratias Iradukunda", role: "admin" },
+          { id: "u-admin-3", email: "batotutarigito@gmail.com", password: hp, name: "Deogratias Iradukunda", role: "admin" },
           { id: "u-student-1", email: "jean@batotutarigito.org", password: hp, name: "Jean de Dieu Niyomugabo", role: "student" },
           { id: "u-student-2", email: "claire@batotutarigito.org", password: hp, name: "Marie Claire Uwase", role: "student" }
         ];
