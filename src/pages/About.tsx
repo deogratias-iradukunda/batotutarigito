@@ -6,7 +6,7 @@ import { SEO } from "../components/SEO";
 import api from "../lib/api";
 
 export const About: React.FC = () => {
-  const [impactImage, setImpactImage] = useState("https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=85&w=2400");
+  const [impactImage, setImpactImage] = useState("/umuganda.webp");
 
   useEffect(() => {
     const fetchImpactImage = async () => {

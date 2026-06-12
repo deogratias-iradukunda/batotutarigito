@@ -295,7 +295,7 @@ app.get("/api/auth/me", requireAuth, (req: any, res) => {
 });
 
 // --- Image Upload API ---
-app.post("/api/upload", requireAuth, upload.single("image"), async (req: any, res) => {
+app.post("/api/upload", requireAuth, requireAdmin, upload.single("image"), async (req: any, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" });
   }
@@ -574,6 +574,10 @@ app.post("/api/home-banners", requireAuth, requireAdmin, async (req: any, res) =
       return res.status(400).json({ error: "Image URL is required" });
     }
 
+    if (/unsplash\.com/i.test(image)) {
+      return res.status(400).json({ error: "Pasting or uploading Unsplash images is blocked on this platform. Please upload a custom image or use a different non-Unsplash URL." });
+    }
+
     if (!memoryBanners) {
       try {
         const tmpFile = path.join(os.tmpdir(), "home_banners.json");
@@ -614,6 +618,10 @@ app.put("/api/home-banners/:id", requireAuth, requireAdmin, async (req: any, res
   try {
     const { id } = req.params;
     const { image, title, description, cta, link } = req.body;
+
+    if (image && /unsplash\.com/i.test(image)) {
+      return res.status(400).json({ error: "Pasting or uploading Unsplash images is blocked on this platform. Please upload a custom image or use a different non-Unsplash URL." });
+    }
 
     if (!memoryBanners) {
       try {
@@ -680,11 +688,11 @@ app.delete("/api/home-banners/:id", requireAuth, requireAdmin, async (req: any, 
 });
 
 let memoryImpactImage: string | null = null;
-const defaultImpactImage = "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=85&w=2400";
+const defaultImpactImage = "/umuganda.webp";
 
 app.get("/api/impact-image", async (req, res) => {
   try {
-    if (memoryImpactImage) {
+    if (memoryImpactImage && !/unsplash\.com/i.test(memoryImpactImage)) {
       return res.json({ image: memoryImpactImage });
     }
     const tmpFile = path.join(os.tmpdir(), "impact_image.json");
@@ -693,12 +701,12 @@ app.get("/api/impact-image", async (req, res) => {
     try {
       const data = await fs.readFile(tmpFile, "utf-8");
       const parsed = JSON.parse(data);
-      memoryImpactImage = parsed.image || defaultImpactImage;
+      memoryImpactImage = parsed.image && !/unsplash\.com/i.test(parsed.image) ? parsed.image : defaultImpactImage;
     } catch {
       try {
         const data = await fs.readFile(localFile, "utf-8");
         const parsed = JSON.parse(data);
-        memoryImpactImage = parsed.image || defaultImpactImage;
+        memoryImpactImage = parsed.image && !/unsplash\.com/i.test(parsed.image) ? parsed.image : defaultImpactImage;
       } catch {
         memoryImpactImage = defaultImpactImage;
       }
@@ -714,6 +722,9 @@ app.put("/api/impact-image", requireAuth, requireAdmin, async (req: any, res) =>
     const { image } = req.body;
     if (!image) {
       return res.status(400).json({ error: "Image URL is required" });
+    }
+    if (/unsplash\.com/i.test(image)) {
+      return res.status(400).json({ error: "Pasting or uploading Unsplash images is blocked on this platform. Please upload a custom image or use a different non-Unsplash URL." });
     }
     memoryImpactImage = image;
     const tmpFile = path.join(os.tmpdir(), "impact_image.json");

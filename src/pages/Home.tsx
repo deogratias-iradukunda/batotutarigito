@@ -51,7 +51,7 @@ export const Home: React.FC = () => {
   });
 
   // Our Impact / Our Mission custom photo state and handlers
-  const [impactImage, setImpactImage] = useState("https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=85&w=2400");
+  const [impactImage, setImpactImage] = useState("/umuganda.webp");
   const [impactUploadLoading, setImpactUploadLoading] = useState(false);
   const [impactImageMode, setImpactImageMode] = useState<"upload" | "url">("upload");
   const [impactImageUrl, setImpactImageUrl] = useState("");
@@ -189,6 +189,10 @@ export const Home: React.FC = () => {
         toast.error("Please enter a valid high-resolution image URL");
         return;
       }
+      if (/unsplash\.com/i.test(newSlideUrl)) {
+        toast.error("Pasting or uploading Unsplash images is blocked on this platform. Please upload a custom image or use a different non-Unsplash URL.");
+        return;
+      }
       imageUrl = newSlideUrl.trim();
     }
 
@@ -248,6 +252,11 @@ export const Home: React.FC = () => {
           setUploadLoading(false);
           return;
         }
+        if (/unsplash\.com/i.test(editSlideUrl)) {
+          toast.error("Pasting or uploading Unsplash images is blocked on this platform. Please upload a custom image or use a different non-Unsplash URL.");
+          setUploadLoading(false);
+          return;
+        }
         imageUrl = editSlideUrl.trim();
       }
 
@@ -302,6 +311,11 @@ export const Home: React.FC = () => {
       } else {
         if (!impactImageUrl.trim()) {
           toast.error("Please enter a valid high-resolution image URL");
+          setImpactUploadLoading(false);
+          return;
+        }
+        if (/unsplash\.com/i.test(impactImageUrl)) {
+          toast.error("Pasting or uploading Unsplash images is blocked on this platform. Please upload a custom image or use a different non-Unsplash URL.");
           setImpactUploadLoading(false);
           return;
         }
@@ -842,10 +856,10 @@ export const Home: React.FC = () => {
                           required
                           value={editSlideUrl}
                           onChange={e => setEditSlideUrl(e.target.value)}
-                          placeholder="E.g., https://images.unsplash.com/photo-...&q=85&w=2400"
+                          placeholder="E.g., https://yourdomain.com/photo.jpg (Unsplash is blocked)"
                           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-600"
                         />
-                        <p className="text-[9px] text-slate-400">You can paste any direct high-definition web link to display it flawlessly without compression.</p>
+                        <p className="text-[9px] text-slate-400">Paste any direct non-Unsplash link to display it flawlessly. Note: Unsplash is blocked.</p>
                       </div>
                     )}
 
@@ -970,10 +984,10 @@ export const Home: React.FC = () => {
                           required
                           value={newSlideUrl}
                           onChange={e => setNewSlideUrl(e.target.value)}
-                          placeholder="E.g., https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=85&w=2400"
+                          placeholder="E.g., https://yourdomain.com/photo.jpg (Unsplash is blocked)"
                           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-600"
                         />
-                        <p className="text-[9px] text-slate-400">Add any direct link to a beautiful, clean HD wallpaper of your choice.</p>
+                        <p className="text-[9px] text-slate-400">Add any direct link to a beautiful, clean HD wallpaper of your choice (Unsplash is blocked).</p>
                       </div>
                     )}
 
@@ -1105,7 +1119,7 @@ export const Home: React.FC = () => {
                             required
                             value={impactImageUrl}
                             onChange={e => setImpactImageUrl(e.target.value)}
-                            placeholder="E.g., https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=85&w=2400"
+                            placeholder="E.g., https://yourdomain.com/photo.jpg (Unsplash is blocked)"
                             className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-600"
                           />
                         </div>
