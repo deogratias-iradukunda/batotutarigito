@@ -75,7 +75,7 @@ export const About: React.FC = () => {
       />
       {/* Hero Banner Section */}
       <section className="relative py-24 bg-slate-900 overflow-hidden">
-        <div className="absolute inset-0 z-0 bg-cover bg-center opacity-30" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&q=85&w=2400')" }} />
+        <div className="absolute inset-0 z-0 bg-cover bg-center opacity-30" style={{ backgroundImage: `url(${impactImage})` }} />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/80 to-slate-900/40 z-0" />
         
         <div className="relative z-10 max-w-7xl mx-auto px-6 text-center space-y-6">
