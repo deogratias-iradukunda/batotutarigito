@@ -404,49 +404,49 @@ Rubengera, Karongi District, Western Province, Rwanda
 `;
 
         const emailTemplate = `
-          <div style="font-family: 'Inter', -apple-system, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #1e293b; max-width: 600px; margin: 0 auto; border-radius: 12px; border: 1px solid #edf2f7;">
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #1e293b; max-width: 600px; margin: 0 auto; border-radius: 12px; border: 1px solid #e2e8f0;">
             <div style="text-align: center; margin-bottom: 24px;">
-              <h2 style="color: #1e40af; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.025em;">BatoTutariGito NGO</h2>
+              <h2 style="color: #1e40af; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.025em; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">BatoTutariGito NGO</h2>
               <p style="color: #64748b; font-size: 13px; margin: 4px 0 0 0; font-weight: 500;">Rubengera, Karongi District, Western Province, Rwanda</p>
             </div>
             
             <div style="background-color: #ffffff; padding: 32px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);">
-              <h3 style="font-size: 18px; font-weight: 600; margin-top: 0; margin-bottom: 16px; color: #0f172a;">Account Registration Completed</h3>
+              <h3 style="font-size: 18px; font-weight: 600; margin-top: 0; margin-bottom: 16px; color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">Account Registration Completed</h3>
               
-              <p style="font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 24px;">
+              <p style="font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 24px;">
                 Hello <strong>${name}</strong>,<br/><br/>
-                An administrator has successfully registered your portal account as an official <strong>${roleDisplayName}</strong>. You are invited to sign in and join the BatoTutariGito collaboration and academic dashboard.
+                An administrator has successfully registered your portal account as an official <strong>${roleDisplayName}</strong>. You are invited to sign in to access the BatoTutariGito collaboration and academic dashboard.
               </p>
               
-              <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; margin-bottom: 24px; border: 1px solid #edf2f7; border-left: 4px solid #1e40af;">
-                <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #1e40af; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Access Information</h4>
+              <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #e2e8f0; border-left: 4px solid #1e40af;">
+                <h4 style="margin: 0 0 12px 0; font-size: 12px; color: #1e40af; text-transform: uppercase; font-weight: 750; letter-spacing: 0.05em;">Access Credentials</h4>
                 
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                   <tr>
-                    <td style="padding: 4px 0; color: #64748b; width: 120px;"><strong>Username:</strong></td>
-                    <td style="padding: 4px 0; color: #0f172a; font-family: monospace; font-size: 13px;">${email}</td>
+                    <td style="padding: 6px 0; color: #64748b; width: 120px; font-weight: 600;">Username:</td>
+                    <td style="padding: 6px 0; color: #0f172a; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; font-weight: 500;">${email}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 4px 0; color: #64748b;"><strong>Security Key:</strong></td>
-                    <td style="padding: 4px 0; color: #0f172a; font-family: monospace; font-size: 13px; background-color: #f1f5f9; padding: 2px 6px; border-radius: 4px; display: inline-block;">${password}</td>
+                    <td style="padding: 6px 0; color: #64748b; font-weight: 600;">Security Key:</td>
+                    <td style="padding: 6px 0; color: #0f172a; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; font-weight: 600; background-color: #f1f5f9; padding: 2px 8px; border-radius: 4px; display: inline-block;">${password}</td>
                   </tr>
                 </table>
               </div>
               
-              <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 24px;">
-                For system safety, please change this temporary key in your profile configuration immediately after your first sign-in.
+              <p style="font-size: 13px; color: #475569; line-height: 1.5; margin-bottom: 24px;">
+                For system security, please update this temporary key in your profile configuration immediately after your first sign-in.
               </p>
               
               <div style="text-align: center; margin-bottom: 8px;">
-                <a href="${portalUrl}" style="background-color: #1e40af; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600; display: inline-block; box-shadow: 0 2px 4px 0 rgba(30, 64, 175, 0.2);">
+                <a href="${portalUrl}" style="background-color: #1e40af; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-size: 14px; font-weight: 600; display: inline-block;">
                   Sign In to Portal
                 </a>
               </div>
             </div>
             
             <div style="text-align: center; margin-top: 24px; font-size: 11px; color: #94a3b8; line-height: 1.6;">
-              <p style="margin: 0;">This email is an automated transmission for registered users of BatoTutariGito NGO.</p>
-              <p style="margin: 4px 0 0 0;">&copy; ${currentYear} BatoTutariGito. All rights reserved.</p>
+              <p style="margin: 0; padding-bottom: 4px;">This is a mandatory transactional notification regarding your account at BatoTutariGito NGO.</p>
+              <p style="margin: 0;">&copy; ${currentYear} BatoTutariGito. Rubengera, Karongi District, Karongi, RW. All rights reserved.</p>
             </div>
           </div>
         `;

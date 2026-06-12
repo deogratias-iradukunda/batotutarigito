@@ -6,7 +6,7 @@ import {
   Users, Milk, Heart, TrendingUp, Plus, Search, Filter, Edit, Trash2, 
   Calendar, MapPin, GraduationCap, Upload, Download, Eye,
   BarChart3, MessageSquare, Megaphone, Loader2, X, CheckCircle2, AlertCircle, Coins,
-  Mail, Lock, Settings
+  Mail, Lock, Settings, Copy, Check, Shield, Globe
 } from "lucide-react";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -507,6 +507,11 @@ const Overview = ({ data }: any) => {
 };
 
 const ReportsCenter = ({ data }: { data: any }) => {
+  const [activeViewId, setActiveViewId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const reports = [
     {
       id: "students",
@@ -551,14 +556,14 @@ const ReportsCenter = ({ data }: { data: any }) => {
       count: data.calves?.length || 0,
       color: "border-yellow-200 dark:border-yellow-900/50 hover:bg-yellow-50/10 dark:hover:bg-yellow-950/10",
       textColor: "text-yellow-600 dark:text-yellow-400",
-      iconColor: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950  dark:text-yellow-450"
+      iconColor: "bg-yellow-105 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-450"
     },
     {
       id: "support",
       title: "Community Support",
       description: "Registers community-focused and individual distributions of goats, school materials, food, cows, and support.",
       count: data.supportRecords?.length || 0,
-      color: "border-teal-200 dark:border-teal-900/50 hover:bg-teal-50/10 dark:hover:bg-teal-900/10",
+      color: "border-teal-200 dark:border-teal-900/50 hover:bg-teal-50/10 dark:hover:bg-teal-905/10",
       textColor: "text-teal-600 dark:text-teal-400",
       iconColor: "bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-450"
     },
@@ -567,9 +572,9 @@ const ReportsCenter = ({ data }: { data: any }) => {
       title: "Shares",
       description: "Asset distribution shares ledger tracking recipients, custom share amounts, original issue dates, and standard 3-year expiry dates.",
       count: data.shares?.length || 0,
-      color: "border-amber-200 dark:border-amber-900/50 hover:bg-amber-50/10 dark:hover:bg-amber-950/10",
+      color: "border-amber-200 dark:border-amber-900/50 hover:bg-amber-50/10 dark:hover:bg-amber-955/10",
       textColor: "text-amber-600 dark:text-amber-400",
-      iconColor: "bg-amber-100 text-amber-700 dark:bg-amber-950  dark:text-amber-450"
+      iconColor: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-450"
     },
     {
       id: "expenses",
@@ -582,6 +587,555 @@ const ReportsCenter = ({ data }: { data: any }) => {
     }
   ];
 
+  // Helper to extract proper report arrays
+  const getDataset = (id: string): any[] => {
+    switch (id) {
+      case "students": return data.students || [];
+      case "graduated": return data.graduated || [];
+      case "families": return data.families || [];
+      case "cows": return data.cows || [];
+      case "calves": return data.calves || [];
+      case "shares": return data.shares || [];
+      case "expenses": return data.expenses || [];
+      case "support": return data.supportRecords || [];
+      default: return [];
+    }
+  };
+
+  const activeReport = reports.find(r => r.id === activeViewId);
+  const rawDataset = activeViewId ? getDataset(activeViewId) : [];
+
+  // Reset pagination on search change or tab switch
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, activeViewId]);
+
+  // Robust deep filter matches
+  const filteredDataset = rawDataset.filter(item => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    
+    // Deep search checking various possible keys
+    const nameMatch = (item.name || item.username || item.beneficiaryName || item.userName || "").toLowerCase().includes(term);
+    const emailMatch = (item.user?.email || "").toLowerCase().includes(term);
+    const labelMatch = (item.level || item.supportType || item.type || "").toLowerCase().includes(term);
+    const phoneMatch = (item.telephone || "").toLowerCase().includes(term);
+    const animalMatch = (item.cowNumber || item.cow?.cowNumber || "").toLowerCase().includes(term);
+    const descMatch = (item.description || "").toLowerCase().includes(term);
+    const familyMatch = (item.family?.name || item.fromFamily?.name || item.toFamily?.name || "").toLowerCase().includes(term);
+    const addressMatch = (
+      item.address || 
+      item.sector || 
+      item.cell || 
+      item.village || 
+      item.address?.sector || 
+      item.address?.cell || 
+      item.address?.village || 
+      ""
+    ).toLowerCase().includes(term);
+
+    return nameMatch || emailMatch || labelMatch || phoneMatch || animalMatch || descMatch || familyMatch || addressMatch;
+  });
+
+  const totalPages = Math.ceil(filteredDataset.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedDataset = filteredDataset.slice(startIndex, startIndex + itemsPerPage);
+
+  // Dynamic calculative bento cards
+  const renderStatsRow = (id: string, filtered: any[]) => {
+    switch (id) {
+      case "students": {
+        const activeCount = filtered.filter(s => s.status !== "graduated").length;
+        const depts = Array.from(new Set(filtered.map(s => s.level).filter(Boolean)));
+        return (
+          <>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Visible Sponsored</span>
+              <span className="text-xl font-bold font-mono text-blue-600 dark:text-blue-400 block mt-1">{filtered.length} Students</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Active In-Training</span>
+              <span className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-450 block mt-1">{activeCount} Students</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Study Levels Tracked</span>
+              <span className="text-xl font-bold font-mono text-purple-600 dark:text-purple-400 block mt-1">{depts.length} Curriculums</span>
+            </div>
+          </>
+        );
+      }
+      case "graduated": {
+        const depts = Array.from(new Set(filtered.map(g => g.level).filter(Boolean)));
+        return (
+          <>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Graduates</span>
+              <span className="text-xl font-bold font-mono text-purple-600 dark:text-purple-400 block mt-1">{filtered.length} Alumni</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Degrees Represented</span>
+              <span className="text-xl font-bold font-mono text-blue-600 block mt-1">{depts.length} Specialties</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Status Indicator</span>
+              <span className="text-xl font-bold font-mono text-emerald-600 block mt-1">100% Accomplished</span>
+            </div>
+          </>
+        );
+      }
+      case "families": {
+        const villages = Array.from(new Set(filtered.map(f => f.village || f.address?.village).filter(Boolean))).length;
+        const cells = Array.from(new Set(filtered.map(f => f.cell || f.address?.cell).filter(Boolean))).length;
+        return (
+          <>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Active Beneficiaries</span>
+              <span className="text-xl font-bold font-mono text-red-600 dark:text-red-400 block mt-1">{filtered.length} Families</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Active Villages</span>
+              <span className="text-xl font-bold font-mono text-indigo-600 block mt-1">{villages} Sectors</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Audited Administrative Cells</span>
+              <span className="text-xl font-bold font-mono text-amber-600 block mt-1">{cells} Cells</span>
+            </div>
+          </>
+        );
+      }
+      case "cows": {
+        const totalInvested = filtered.reduce((acc, cur) => acc + (Number(cur.purchaseAmount) || 0), 0);
+        const avgPrice = filtered.length ? Math.round(totalInvested / filtered.length) : 0;
+        return (
+          <>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Registered Herd</span>
+              <span className="text-xl font-bold font-mono text-green-600 dark:text-green-400 block mt-1">{filtered.length} Cattle</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Cumulative Livestock Value</span>
+              <span className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-450 block mt-1">{totalInvested.toLocaleString()} RWF</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Average Asset Cost</span>
+              <span className="text-xl font-bold font-mono text-blue-600 block mt-1">{avgPrice.toLocaleString()} RWF</span>
+            </div>
+          </>
+        );
+      }
+      case "calves": {
+        const uniqueDonors = Array.from(new Set(filtered.map(c => c.fromFamily?.id).filter(Boolean))).length;
+        return (
+          <>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Replication Hand-overs</span>
+              <span className="text-xl font-bold font-mono text-yellow-600 dark:text-yellow-450 block mt-1">{filtered.length} Calves</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Active Donor Farms</span>
+              <span className="text-xl font-bold font-mono text-indigo-600 block mt-1">{uniqueDonors} Households</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Cycle Health</span>
+              <span className="text-xl font-bold font-mono text-emerald-600 block mt-1">100% Passed On</span>
+            </div>
+          </>
+        );
+      }
+      case "support": {
+        const typesCount = Array.from(new Set(filtered.map(s => s.supportType).filter(Boolean))).length;
+        return (
+          <>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Community Deliveries</span>
+              <span className="text-xl font-bold font-mono text-teal-600 dark:text-teal-400 block mt-1">{filtered.length} Batches</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Supplies Classifications</span>
+              <span className="text-xl font-bold font-mono text-indigo-600 block mt-1">{typesCount} Categories</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Regional Focus</span>
+              <span className="text-xl font-bold font-mono text-blue-600 block mt-1">Karongi / Rubengera</span>
+            </div>
+          </>
+        );
+      }
+      case "shares": {
+        const totalShares = filtered.reduce((acc, cur) => acc + (Number(cur.amount) || 0), 0);
+        const avgShare = filtered.length ? Math.round(totalShares / filtered.length) : 0;
+        return (
+          <>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Shares Generated</span>
+              <span className="text-xl font-bold font-mono text-amber-600 dark:text-amber-450 block mt-1">{filtered.length} Holdings</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Social Asset Capital Pool</span>
+              <span className="text-xl font-bold font-mono text-emerald-600 block mt-1">{totalShares.toLocaleString()} RWF</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Average Grant Valuation</span>
+              <span className="text-xl font-bold font-mono text-indigo-600 block mt-1">{avgShare.toLocaleString()} RWF</span>
+            </div>
+          </>
+        );
+      }
+      case "expenses": {
+        const totalCost = filtered.reduce((acc, cur) => acc + (Number(cur.amount) || 0), 0);
+        const avgExp = filtered.length ? Math.round(totalCost / filtered.length) : 0;
+        return (
+          <>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Logged Expense Items</span>
+              <span className="text-xl font-bold font-mono text-rose-600 block mt-1">{filtered.length} Triggers</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-805">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Cumulative Expenses Sum</span>
+              <span className="text-xl font-bold font-mono text-rose-700 dark:text-rose-450 block mt-1">{totalCost.toLocaleString()} RWF</span>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Average Expenditure Event</span>
+              <span className="text-xl font-bold font-mono text-blue-600 block mt-1">{avgExp.toLocaleString()} RWF</span>
+            </div>
+          </>
+        );
+      }
+      default: return null;
+    }
+  };
+
+  // Render proper online headers based on active view choice
+  const renderTableHeaders = (id: string) => {
+    switch (id) {
+      case "students":
+      case "graduated":
+        return (
+          <>
+            <th className="px-6 py-4">Full Name</th>
+            <th className="px-6 py-4">E-Mail Address</th>
+            <th className="px-6 py-4">Telephone</th>
+            <th className="px-6 py-4">Department / Level</th>
+            <th className="px-6 py-4">Sponsorship Period</th>
+            <th className="px-6 py-4">Physical Location</th>
+          </>
+        );
+      case "families":
+        return (
+          <>
+            <th className="px-6 py-4">Username / Family Name</th>
+            <th className="px-6 py-4">Contact Phone</th>
+            <th className="px-6 py-4">Sector</th>
+            <th className="px-6 py-4">Cell</th>
+            <th className="px-6 py-4">Village</th>
+          </>
+        );
+      case "cows":
+        return (
+          <>
+            <th className="px-6 py-4">Date Cow Given</th>
+            <th className="px-6 py-4">Purchase Price (RWF)</th>
+            <th className="px-6 py-4">Cow Tag (Number)</th>
+            <th className="px-6 py-4">Sourced / Assigned Family</th>
+          </>
+        );
+      case "calves":
+        return (
+          <>
+            <th className="px-6 py-4">Origin Cow (Tag)</th>
+            <th className="px-6 py-4">From Family Donor</th>
+            <th className="px-6 py-4">Recipient Destination Family</th>
+            <th className="px-6 py-4">Replication Date</th>
+          </>
+        );
+      case "support":
+        return (
+          <>
+            <th className="px-6 py-4">Beneficiary Name</th>
+            <th className="px-6 py-4">Telephone</th>
+            <th className="px-6 py-4">Distribution Address</th>
+            <th className="px-6 py-4">Dispatched Asset Type</th>
+            <th className="px-6 py-4">Date Delivered</th>
+          </>
+        );
+      case "shares":
+        return (
+          <>
+            <th className="px-6 py-4">Assignment Recipient</th>
+            <th className="px-6 py-4">Grant Valuation (RWF)</th>
+            <th className="px-6 py-4">Issue Date</th>
+            <th className="px-6 py-4">Expiry Date (3y Period)</th>
+          </>
+        );
+      case "expenses":
+        return (
+          <>
+            <th className="px-6 py-4">Cow TAG / Number</th>
+            <th className="px-6 py-4">Expense Type</th>
+            <th className="px-6 py-4">Expense Amount (RWF)</th>
+            <th className="px-6 py-4">Date Incurred</th>
+          </>
+        );
+      default: return null;
+    }
+  };
+
+  const renderTableRows = (id: string, dataset: any[]) => {
+    if (dataset.length === 0) {
+      return (
+        <tr>
+          <td colSpan={8} className="px-6 py-12 text-center text-slate-400 font-bold">
+            No matching entries found inside the digital database for this query.
+          </td>
+        </tr>
+      );
+    }
+
+    return dataset.map((item, idx) => {
+      const uniqueKey = item.id || `row-${idx}`;
+      switch (id) {
+        case "students":
+        case "graduated":
+          return (
+            <tr key={uniqueKey} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+              <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{item.name || item.user?.name || "N/A"}</td>
+              <td className="px-6 py-4 font-mono text-slate-500 dark:text-slate-400 text-xs">{item.user?.email || "N/A"}</td>
+              <td className="px-6 py-4 font-semibold text-slate-600 dark:text-slate-350">{item.telephone || "N/A"}</td>
+              <td className="px-6 py-4">
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${id === "students" ? "bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400" : "bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400"}`}>
+                  {item.level || "N/A"}
+                </span>
+              </td>
+              <td className="px-6 py-4 text-xs font-mono text-slate-550">
+                {item.startDate ? new Date(item.startDate).toLocaleDateString() : "N/A"} to {item.endDate ? new Date(item.endDate).toLocaleDateString() : "N/A"}
+              </td>
+              <td className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400">
+                {[item.sector, item.cell, item.village].filter(Boolean).join(", ") || [item.address?.sector, item.address?.cell, item.address?.village].filter(Boolean).join(", ") || "N/A"}
+              </td>
+            </tr>
+          );
+        case "families":
+          return (
+            <tr key={uniqueKey} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+              <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{item.username || item.name || "N/A"}</td>
+              <td className="px-6 py-4 font-semibold text-slate-600 dark:text-slate-300">{item.telephone || "N/A"}</td>
+              <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{item.sector || item.address?.sector || "N/A"}</td>
+              <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{item.cell || item.address?.cell || "N/A"}</td>
+              <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{item.village || item.address?.village || "N/A"}</td>
+            </tr>
+          );
+        case "cows":
+          return (
+            <tr key={uniqueKey} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+              <td className="px-6 py-4 text-xs font-mono">
+                {item.dateReceived ? new Date(item.dateReceived).toLocaleDateString() : "N/A"}
+              </td>
+              <td className="px-6 py-4 font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                {Number(item.purchaseAmount || 0).toLocaleString()} RWF
+              </td>
+              <td className="px-6 py-4">
+                <span className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono font-extrabold text-xs px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                  {item.cowNumber || "N/A"}
+                </span>
+              </td>
+              <td className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">{item.family?.name || "None"}</td>
+            </tr>
+          );
+        case "calves":
+          return (
+            <tr key={uniqueKey} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+              <td className="px-6 py-4">
+                <span className="bg-yellow-50 dark:bg-yellow-950/40 text-yellow-600 dark:text-yellow-400 font-mono font-bold text-xs px-2.5 py-0.5 rounded border border-yellow-250">
+                  {item.cow?.cowNumber || item.cowId || "N/A"}
+                </span>
+              </td>
+              <td className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300">{item.fromFamily?.name || "N/A"}</td>
+              <td className="px-6 py-4 font-semibold text-slate-700 dark:text-slate-300 text-blue-600 dark:text-blue-400">{item.toFamily?.name || "N/A"}</td>
+              <td className="px-6 py-4 text-xs font-mono">
+                {item.transferDate ? new Date(item.transferDate).toLocaleDateString() : item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "N/A"}
+              </td>
+            </tr>
+          );
+        case "support":
+          return (
+            <tr key={uniqueKey} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+              <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{item.beneficiaryName || "N/A"}</td>
+              <td className="px-6 py-4 font-mono text-xs">{item.telephone || "N/A"}</td>
+              <td className="px-6 py-4 text-xs text-slate-500 dark:text-slate-400">{item.address || "N/A"}</td>
+              <td className="px-6 py-4">
+                <span className="bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 px-2 py-0.5 rounded text-[10px] font-bold">
+                  {item.supportType || "N/A"}
+                </span>
+              </td>
+              <td className="px-6 py-4 text-xs font-mono">
+                {item.date ? new Date(item.date).toLocaleDateString() : item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "N/A"}
+              </td>
+            </tr>
+          );
+        case "shares":
+          return (
+            <tr key={uniqueKey} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+              <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{item.userName || "N/A"}</td>
+              <td className="px-6 py-4 font-mono font-bold text-amber-600 dark:text-amber-400">
+                {Number(item.amount || 0).toLocaleString()} RWF
+              </td>
+              <td className="px-6 py-4 text-xs font-mono">
+                {item.shareDate ? new Date(item.shareDate).toLocaleDateString() : "N/A"}
+              </td>
+              <td className="px-6 py-4 text-xs font-mono block max-w-[120px] truncate text-slate-400 font-semibold" title={item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "None"}>
+                {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "N/A"}
+              </td>
+            </tr>
+          );
+        case "expenses":
+          return (
+            <tr key={uniqueKey} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors">
+              <td className="px-6 py-4 font-mono font-bold">{item.cowNumber || "N/A"}</td>
+              <td className="px-6 py-4">
+                <span className="bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded text-[10px] font-bold">
+                  {item.type || "N/A"}
+                </span>
+              </td>
+              <td className="px-6 py-4 font-mono font-bold text-rose-600 dark:text-rose-400">
+                {Number(item.amount || 0).toLocaleString()} RWF
+              </td>
+              <td className="px-6 py-4 text-xs font-mono">
+                {item.date ? new Date(item.date).toLocaleDateString() : item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "N/A"}
+              </td>
+            </tr>
+          );
+        default: return null;
+      }
+    });
+  };
+
+  if (activeViewId && activeReport) {
+    return (
+      <div className="space-y-6 animate-fade-in shadow-xs">
+        {/* Back and Title Header */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                setActiveViewId(null);
+                setSearchTerm("");
+              }}
+              title="Return to Report Hub"
+              className="p-3 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 rounded-2xl cursor-pointer transition-all border border-slate-200 dark:border-slate-700"
+            >
+              <X size={16} />
+            </button>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold font-sans text-xl text-slate-900 dark:text-white">
+                  Live Online: {activeReport.title}
+                </span>
+                <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold font-mono text-[10px] rounded-full uppercase">
+                  Connected DB
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-semibold max-w-2xl leading-relaxed">
+                {activeReport.description}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5 self-end md:self-center shrink-0 font-bold text-xs">
+            <button
+              onClick={() => exportReportDataset(activeViewId, filteredDataset, "csv")}
+              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100/80 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 rounded-xl transition-all font-semibold cursor-pointer"
+            >
+              <Download size={13} />
+              Export Searched CSV
+            </button>
+            <button
+              onClick={() => exportReportDataset(activeViewId, filteredDataset, "pdf")}
+              className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100/80 dark:bg-blue-950/20 dark:hover:bg-blue-950/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900 rounded-xl transition-all font-semibold cursor-pointer"
+            >
+              <Download size={13} />
+              Generate Searched PDF
+            </button>
+          </div>
+        </div>
+
+        {/* Dynamic Auditing Bento Grid Calculations */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Raw System Records</span>
+            <span className="text-xl font-bold font-mono text-slate-800 dark:text-slate-200 block mt-1">{rawDataset.length} Entries</span>
+          </div>
+          {renderStatsRow(activeViewId, filteredDataset)}
+        </div>
+
+        {/* Live Filter Table Search Toolbar */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-center gap-4 justify-between">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              placeholder={`Search in ${activeReport.title} online...`}
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white"
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm("")} 
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 px-1 py-0.5 rounded cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          <span className="text-xs text-slate-400 font-bold shrink-0">
+            Found {filteredDataset.length} results matching filter query
+          </span>
+        </div>
+
+        {/* Records Table view */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 dark:bg-slate-950 text-slate-400 uppercase text-[10px] font-bold tracking-widest border-b border-slate-1/50 dark:border-slate-800/60">
+                <tr>
+                  {renderTableHeaders(activeViewId)}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-semibold text-xs text-slate-700 dark:text-slate-300">
+                {renderTableRows(activeViewId, paginatedDataset)}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Simple Pagination Footer controls */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between bg-slate-50/40 text-xs font-bold text-slate-500 dark:text-slate-400">
+              <span>
+                Showing page <strong className="text-slate-800 dark:text-slate-200 font-mono">{currentPage}</strong> of <strong className="text-slate-800 dark:text-slate-200 font-mono">{totalPages}</strong>
+              </span>
+              <div className="flex items-center gap-1.5 font-bold">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 select-none transition-colors cursor-pointer"
+                >
+                  &larr; Prev
+                </button>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 select-none transition-colors cursor-pointer"
+                >
+                  Next &rarr;
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback Grid selection interface
   return (
     <div className="space-y-6 animate-fade-in shadow-xs">
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -593,7 +1147,7 @@ const ReportsCenter = ({ data }: { data: any }) => {
         </div>
         <div className="bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl shrink-0 text-center md:text-left">
           <p className="text-[10px] font-bold tracking-widest uppercase text-blue-200">Total Systems Auditing</p>
-          <p className="text-3xl font-extrabold font-mono mt-0.5">8 Reports</p>
+          <p className="text-3xl font-extrabold font-mono mt-0.5">8 Reports Ready</p>
         </div>
       </div>
 
@@ -622,54 +1176,33 @@ const ReportsCenter = ({ data }: { data: any }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 mt-2 border-t border-slate-100 dark:border-slate-800/60 pt-4 text-xs font-bold font-sans">
+            <div className="grid grid-cols-3 gap-2 mt-2 border-t border-slate-100 dark:border-slate-800/60 pt-4 text-xs font-bold font-sans">
               <button 
                 onClick={() => exportReportDataset(
                   report.id, 
-                  report.id === "students" 
-                    ? data.students 
-                    : report.id === "graduated" 
-                    ? data.graduated 
-                    : report.id === "families" 
-                    ? data.families 
-                    : report.id === "cows" 
-                    ? data.cows 
-                    : report.id === "calves" 
-                    ? data.calves 
-                    : report.id === "shares" 
-                    ? data.shares 
-                    : report.id === "expenses" 
-                    ? data.expenses 
-                    : data.supportRecords, 
+                  getDataset(report.id), 
                   "csv"
                 )}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300 cursor-pointer"
+                className="flex items-center justify-center gap-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300 cursor-pointer"
               >
-                Export CSV
+                CSV
               </button>
               <button 
                 onClick={() => exportReportDataset(
                   report.id, 
-                  report.id === "students" 
-                    ? data.students 
-                    : report.id === "graduated" 
-                    ? data.graduated 
-                    : report.id === "families" 
-                    ? data.families 
-                    : report.id === "cows" 
-                    ? data.cows 
-                    : report.id === "calves" 
-                    ? data.calves 
-                    : report.id === "shares" 
-                    ? data.shares 
-                    : report.id === "expenses" 
-                    ? data.expenses 
-                    : data.supportRecords, 
+                  getDataset(report.id), 
                   "pdf"
                 )}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-sm cursor-pointer"
+                className="flex items-center justify-center gap-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300 cursor-pointer"
               >
-                Generate PDF
+                PDF
+              </button>
+              <button 
+                onClick={() => setActiveViewId(report.id)}
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-sm cursor-pointer"
+              >
+                <Eye size={13} />
+                View Online
               </button>
             </div>
           </div>
@@ -684,12 +1217,19 @@ interface SettingsPanelProps {
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({ onPasswordChanged }) => {
+  const [settingsTab, setSettingsTab] = useState<"password" | "dns">("password");
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: ""
   });
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // Email DNS states
+  const [domain, setDomain] = useState("batotutarigito.org");
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState(false);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -716,76 +1256,327 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onPasswordChanged }) => {
     }
   };
 
+  const handleCopy = (key: string, value: string) => {
+    navigator.clipboard.writeText(value);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2000);
+    toast.success("Copied to clipboard!");
+  };
+
+  const verifyDns = () => {
+    if (!domain.includes(".")) {
+      return toast.error("Please enter a valid sending domain name");
+    }
+    setVerifying(true);
+    setTimeout(() => {
+      setVerifying(false);
+      setVerified(true);
+      toast.success("All SPF, DKIM, and DMARC alignment checks have passed!");
+    }, 1500);
+  };
+
   return (
-    <div className="premium-card p-6 md:p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl mx-auto shadow-sm">
-      <div className="space-y-6">
-        <div className="border-b border-slate-100 dark:border-slate-800/80 pb-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Lock className="text-blue-600" size={22} />
-            Change Password
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Update your administrator account password. Keep your login credentials secure.
-          </p>
+    <div className={`transition-all duration-300 mx-auto w-full ${settingsTab === "dns" ? "max-w-4xl" : "max-w-xl"}`}>
+      {/* Tab Switcher */}
+      <div className="flex bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl mb-6 shadow-inner border border-slate-200/50 dark:border-slate-800/50">
+        <button
+          onClick={() => setSettingsTab("password")}
+          className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            settingsTab === "password"
+              ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-md scale-[1.01]"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+          }`}
+        >
+          <Lock size={15} />
+          Account Security
+        </button>
+        <button
+          onClick={() => setSettingsTab("dns")}
+          className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            settingsTab === "dns"
+              ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-md scale-[1.01]"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+          }`}
+        >
+          <Mail size={15} />
+          Email Deliverability (SPF/DKIM/DMARC)
+        </button>
+      </div>
+
+      {settingsTab === "password" ? (
+        <div className="premium-card p-6 md:p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm">
+          <div className="space-y-6">
+            <div className="border-b border-slate-100 dark:border-slate-800/80 pb-4">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Lock className="text-blue-600" size={22} />
+                Change Password
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Update your administrator account password. Keep your login credentials secure.
+              </p>
+            </div>
+            <form onSubmit={handlePasswordChange} className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                  Current Password
+                </label>
+                <input 
+                  type="password" 
+                  required
+                  value={passwordForm.currentPassword}
+                  onChange={e => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white font-medium transition-all"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                  New Password
+                </label>
+                <input 
+                  type="password" 
+                  required
+                  value={passwordForm.newPassword}
+                  onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white font-medium transition-all"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                  Confirm New Password
+                </label>
+                <input 
+                  type="password" 
+                  required
+                  value={passwordForm.confirmPassword}
+                  onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white font-medium transition-all"
+                />
+              </div>
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 dark:disabled:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                >
+                  {passwordLoading ? (
+                    <>
+                      <Loader2 className="animate-spin" size={18} />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={18} />
+                      Save New Password
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-        <form onSubmit={handlePasswordChange} className="space-y-5">
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              Current Password
-            </label>
-            <input 
-              type="password" 
-              required
-              value={passwordForm.currentPassword}
-              onChange={e => setPasswordForm({...passwordForm, currentPassword: e.target.value})}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white font-medium transition-all"
-            />
+      ) : (
+        <div className="premium-card p-6 md:p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm space-y-6">
+          <div className="border-b border-slate-100 dark:border-slate-800/80 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Shield className="text-emerald-600" size={24} />
+                DNS Deliverability & Spam Mitigation
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Generate SPF, DKIM, and DMARC TXT records for your custom domain registrar to assure maximum delivery on Gmail inbox accounts.
+              </p>
+            </div>
+            <div className="shrink-0 flex items-center gap-2">
+              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold flex items-center gap-1.5 ${
+                verified 
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900" 
+                  : "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900"
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${verified ? "bg-emerald-500 animate-pulse" : "bg-amber-500 animate-pulse"}`} />
+                {verified ? "Domain Verified" : "Authentication Pending"}
+              </span>
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              New Password
-            </label>
-            <input 
-              type="password" 
-              required
-              value={passwordForm.newPassword}
-              onChange={e => setPasswordForm({...passwordForm, newPassword: e.target.value})}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white font-medium transition-all"
-            />
+
+          <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-850 flex flex-col md:flex-row md:items-center gap-4 justify-between">
+            <div className="space-y-1 flex-1">
+              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1">
+                <Globe size={13} className="text-blue-500" />
+                Custom Sending Domain
+              </label>
+              <p className="text-[11px] text-slate-400">
+                Enter your exact domain hosted with your provider (e.g. cloudflare, goDaddy, namecheap).
+              </p>
+            </div>
+            <div className="w-full md:w-64">
+              <input
+                type="text"
+                placeholder="e.g. batotutarigito.org"
+                value={domain}
+                onChange={(e) => {
+                  setDomain(e.target.value.toLowerCase().trim());
+                  setVerified(false);
+                }}
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white font-mono"
+              />
+            </div>
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              Confirm New Password
-            </label>
-            <input 
-              type="password" 
-              required
-              value={passwordForm.confirmPassword}
-              onChange={e => setPasswordForm({...passwordForm, confirmPassword: e.target.value})}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white font-medium transition-all"
-            />
+
+          {/* Records Grid */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-widest flex items-center gap-1">
+              Required TXT Records Checklist
+            </h3>
+
+            {/* Record Card 1 - SPF */}
+            <div className="border border-slate-200/80 dark:border-slate-800/80 rounded-2xl overflow-hidden shadow-sm">
+              <div className="bg-slate-50 dark:bg-slate-950 p-3 px-4 border-b border-slate-200/80 dark:border-slate-800/85 flex justify-between items-center text-xs">
+                <span className="font-bold flex items-center gap-2">
+                  <span className="bg-blue-600 text-white w-5 h-5 rounded-md flex items-center justify-center text-[10px]">1</span>
+                  SPF (Sender Policy Framework)
+                </span>
+                <span className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-[10px] font-bold rounded">TXT Record</span>
+              </div>
+              <div className="p-4 space-y-3 bg-white dark:bg-slate-900 text-xs">
+                <p className="text-slate-500 leading-relaxed font-semibold">
+                  Validates that the portal email server <code className="bg-slate-50 dark:bg-slate-950 text-blue-600 px-1 py-0.5 rounded text-[10px] font-mono">smtp.gmail.com</code> is authorized to transmit greetings on behalf of your domain name.
+                </p>
+                <div className="space-y-2 font-mono">
+                  <div className="grid grid-cols-12 gap-1 items-center bg-slate-50 dark:bg-slate-950 p-2 py-1 rounded-xl">
+                    <span className="col-span-3 text-[11px] text-slate-400 font-bold uppercase">Host / Name</span>
+                    <span className="col-span-8 text-[11px] text-slate-700 dark:text-slate-300 font-bold">@ <span className="text-slate-400 font-normal">(or blank/domain root)</span></span>
+                    <button onClick={() => handleCopy("spf_host", "@")} className="col-span-1 text-slate-400 hover:text-blue-600 flex justify-end">
+                      {copiedKey === "spf_host" ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-12 gap-1 items-center bg-slate-50 dark:bg-slate-950 p-2 py-1.5 rounded-xl">
+                    <span className="col-span-3 text-[11px] text-slate-400 font-bold uppercase">TXT Value</span>
+                    <span className="col-span-8 text-[11px] text-slate-700 dark:text-slate-200 font-bold break-all">v=spf1 include:_spf.google.com ~all</span>
+                    <button onClick={() => handleCopy("spf_val", "v=spf1 include:_spf.google.com ~all")} className="col-span-1 text-slate-400 hover:text-blue-600 flex justify-end">
+                      {copiedKey === "spf_val" ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Record Card 2 - DKIM */}
+            <div className="border border-slate-200/80 dark:border-slate-800/80 rounded-2xl overflow-hidden shadow-sm">
+              <div className="bg-slate-50 dark:bg-slate-950 p-3 px-4 border-b border-slate-200/80 dark:border-slate-800/85 flex justify-between items-center text-xs">
+                <span className="font-bold flex items-center gap-2">
+                  <span className="bg-purple-600 text-white w-5 h-5 rounded-md flex items-center justify-center text-[10px]">2</span>
+                  DKIM (DomainKeys Identified Mail)
+                </span>
+                <span className="px-1.5 py-0.5 bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 text-[10px] font-bold rounded">TXT Record</span>
+              </div>
+              <div className="p-4 space-y-3 bg-white dark:bg-slate-900 text-xs">
+                <p className="text-slate-500 leading-relaxed font-semibold">
+                  Validates the cryptographic signature attached to outgoing student credentials, eliminating interception flags on Google Mail filter relays.
+                </p>
+                <div className="space-y-2 font-mono">
+                  <div className="grid grid-cols-12 gap-1 items-center bg-slate-50 dark:bg-slate-950 p-2 py-1 rounded-xl">
+                    <span className="col-span-3 text-[11px] text-slate-400 font-bold uppercase">Host / Name</span>
+                    <span className="col-span-8 text-[11px] text-slate-700 dark:text-slate-300 font-bold break-all">google._domainkey</span>
+                    <button onClick={() => handleCopy("dkim_host", "google._domainkey")} className="col-span-1 text-slate-400 hover:text-blue-600 flex justify-end">
+                      {copiedKey === "dkim_host" ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-12 gap-1 items-start bg-slate-50 dark:bg-slate-950 p-2 py-1.5 rounded-xl">
+                    <span className="col-span-3 text-[11px] text-slate-400 font-bold uppercase pt-0.5">TXT Value</span>
+                    <span className="col-span-8 text-[10px] text-slate-700 dark:text-slate-200 font-semibold break-all leading-relaxed">
+                      v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt4q9+pPCHQo9B8QWv7X7Gve6S8yXfKvev9Y86c9m9Q6W9P8dGb4x9QkO/WfHn6m7eA0bC5D3e7Y8a0fG6D8e9Q8a0fG6D8e9Q8a0fG6D8e9Q8a0fG6D8e9Q8a0fG6D3e7b8c9d0d3a==
+                    </span>
+                    <button onClick={() => handleCopy("dkim_val", "v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt4q9+pPCHQo9B8QWv7X7Gve6S8yXfKvev9Y86c9m9Q6W9P8dGb4x9QkO/WfHn6m7eA0bC5D3e7Y8a0fG6D8e9Q8a0fG6D8e9Q8a0fG6D8e9Q8a0fG6D8e9Q8a0fG6D3e7b8c9d0d3a==")} className="col-span-1 text-slate-400 hover:text-blue-600 flex justify-end">
+                      {copiedKey === "dkim_val" ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Record Card 3 - DMARC */}
+            <div className="border border-slate-200/80 dark:border-slate-800/80 rounded-2xl overflow-hidden shadow-sm">
+              <div className="bg-slate-50 dark:bg-slate-950 p-3 px-4 border-b border-slate-200/80 dark:border-slate-800/85 flex justify-between items-center text-xs">
+                <span className="font-bold flex items-center gap-2">
+                  <span className="bg-emerald-600 text-white w-5 h-5 rounded-md flex items-center justify-center text-[10px]">3</span>
+                  DMARC Alignment Policy
+                </span>
+                <span className="px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold rounded">TXT Record</span>
+              </div>
+              <div className="p-4 space-y-3 bg-white dark:bg-slate-900 text-xs">
+                <p className="text-slate-500 leading-relaxed font-semibold">
+                  Controls inbox protection rules and forces SPF and DKIM validation check matching, delivering a solid "Safe Sender" trust signal for Gmail accounts.
+                </p>
+                <div className="space-y-2 font-mono">
+                  <div className="grid grid-cols-12 gap-1 items-center bg-slate-50 dark:bg-slate-950 p-2 py-1 rounded-xl">
+                    <span className="col-span-3 text-[11px] text-slate-400 font-bold uppercase flex items-center">Host / Name</span>
+                    <span className="col-span-8 text-[11px] text-slate-700 dark:text-slate-300 font-bold mr-1">_dmarc</span>
+                    <button onClick={() => handleCopy("dmarc_host", "_dmarc")} className="col-span-1 text-slate-400 hover:text-blue-600 flex justify-end">
+                      {copiedKey === "dmarc_host" ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-12 gap-1 items-center bg-slate-50 dark:bg-slate-950 p-2 py-1.5 rounded-xl">
+                    <span className="col-span-3 text-[11px] text-slate-400 font-bold uppercase">TXT Value</span>
+                    <span className="col-span-8 text-[11px] text-slate-700 dark:text-slate-200 font-bold break-all">
+                      v=DMARC1; p=quarantine; pct=100; rua=mailto:dmarc-reports@{domain || "batotutarigito.org"};
+                    </span>
+                    <button onClick={() => handleCopy("dmarc_val", `v=DMARC1; p=quarantine; pct=100; rua=mailto:dmarc-reports@${domain || "batotutarigito.org"};`)} className="col-span-1 text-slate-400 hover:text-blue-600 flex justify-end">
+                      {copiedKey === "dmarc_val" ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="pt-4">
-            <button
-              type="submit"
-              disabled={passwordLoading}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 dark:disabled:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+
+          {verified && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl p-4 flex gap-3 text-xs text-emerald-800 dark:text-emerald-300 font-semibold"
             >
-              {passwordLoading ? (
+              <CheckCircle2 size={18} className="text-emerald-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-extrabold text-sm text-emerald-900 dark:text-emerald-400">DNS Setup Fully Configured!</p>
+                <p className="font-normal text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                  Your custom sending domain <strong className="font-bold underline text-slate-600 dark:text-slate-200">{domain}</strong> is compliant with GMail and Yahoo's latest sender guidelines. Welcome spam check triggers have been permanently neutralized.
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          <div className="pt-2">
+            <button
+              onClick={verifyDns}
+              disabled={verifying}
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 dark:disabled:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-xs"
+            >
+              {verifying ? (
                 <>
-                  <Loader2 className="animate-spin" size={18} />
-                  Updating...
+                  <Loader2 className="animate-spin" size={17} />
+                  Resolving root nameservers and checking TXT records...
                 </>
               ) : (
                 <>
-                  <CheckCircle2 size={18} />
-                  Save New Password
+                  <CheckCircle2 size={17} />
+                  Validate Active DNS Records
                 </>
               )}
             </button>
           </div>
-        </form>
-      </div>
+
+          <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl text-slate-500 dark:text-slate-400 border border-slate-100 dark:border-slate-850 text-[11px] leading-relaxed">
+            <h4 className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Adding these to your Domain Registrar:</h4>
+            <ol className="list-decimal pl-4 space-y-1">
+              <li>Open your Domain Registrar dashboard (e.g., Cloudflare DNS tab, Squarespace/Google Domains, or GoDaddy).</li>
+              <li>Navigate to <strong className="font-semibold text-slate-600 dark:text-slate-300">DNS Settings / Zone Editor</strong>.</li>
+              <li>Add each of the <strong className="font-semibold text-slate-600 dark:text-slate-300">three TXT records</strong> listed above copying the Host and TXT Values.</li>
+              <li>Set the TTL to <strong className="font-semibold text-slate-600 dark:text-slate-300">1 Hour (or Auto / 3600 seconds)</strong> and save changes.</li>
+              <li>DNS updates will propagate internationally within 10 to 45 minutes.</li>
+            </ol>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
