@@ -507,105 +507,58 @@ app.get("/api/resources/admins", async (req, res) => {
 });
 
 // --- Homepage Banners Routes ---
-// Default banners fallback
-const defaultBanners = [
-  {
-    id: "1",
-    image: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=85&w=2400",
-    title: "Community Impact",
-    description: "Working together to build a sustainable future for our community in Karongi.",
-    cta: "Learn More",
-    link: "/about"
-  },
-  {
-    id: "2",
-    image: "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?auto=format&fit=crop&q=85&w=2400",
-    title: "The Cow Project",
-    description: "Providing nutrition and economic stability to families through cow sponsorship and distribution.",
-    cta: "Support a Family",
-    link: "/login"
-  },
-  {
-    id: "3",
-    image: "https://images.unsplash.com/photo-1531538606174-0f90ff5dce83?auto=format&fit=crop&q=85&w=2400",
-    title: "Our Dedicated Staff",
-    description: "Meet the passionate individuals working on the front lines to transform lives.",
-    cta: "Meet the Team",
-    link: "/about"
-  },
-  {
-    id: "4",
-    image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=85&w=2400",
-    title: "Student Sponsorship",
-    description: "Empowering the next generation through education and long-term sponsorship programs.",
-    cta: "Sponsor Now",
-    link: "/login"
-  },
-  {
-    id: "5",
-    image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=85&w=2400",
-    title: "Preserving History",
-    description: "Honoring our history while building a bright future for all members of our society.",
-    cta: "Our History",
-    link: "/about"
-  },
-  {
-    id: "6",
-    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=85&w=2400",
-    title: "Leadership & Vision",
-    description: "Guided by transparency and a commitment to serving those who need it most.",
-    cta: "Contact Us",
-    link: "/contact"
-  },
-  {
-    id: "7",
-    image: "https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&q=85&w=2400",
-    title: "Global Partnership",
-    description: "Connecting supporters from around the world to local initiatives that matter.",
-    cta: "Join Us",
-    link: "/signup"
-  }
-];
+// Default banners fallback - empty by default to prevent showing unapproved agent-attached images
+const defaultBanners: any[] = [];
 
 let memoryBanners: any[] | null = null;
 
 app.get("/api/home-banners", async (req, res) => {
   try {
-    if (memoryBanners) {
-      // Ensure any low-res default webps inside the memory storage are upgraded on-the-fly
-      memoryBanners = memoryBanners.map(b => {
-        const matchingDef = defaultBanners.find(d => d.id === b.id);
-        if (matchingDef && b.image.endsWith(".webp") && !b.image.startsWith("http")) {
-          return { ...b, image: matchingDef.image };
-        }
-        return b;
-      });
-      return res.json(memoryBanners);
-    }
     const tmpFile = path.join(os.tmpdir(), "home_banners.json");
     const localFile = path.join(process.cwd(), "uploads", "home_banners.json");
-    
-    try {
-      const data = await fs.readFile(tmpFile, "utf-8");
-      memoryBanners = JSON.parse(data);
-    } catch {
+
+    if (!memoryBanners) {
       try {
-        const data = await fs.readFile(localFile, "utf-8");
+        const data = await fs.readFile(tmpFile, "utf-8");
         memoryBanners = JSON.parse(data);
       } catch {
-        memoryBanners = [...defaultBanners];
+        try {
+          const data = await fs.readFile(localFile, "utf-8");
+          memoryBanners = JSON.parse(data);
+        } catch {
+          memoryBanners = [];
+        }
       }
     }
 
     if (memoryBanners) {
-      // Ensure any low-res default webps inside the persisted files are upgraded on-the-fly
-      memoryBanners = memoryBanners.map(b => {
-        const matchingDef = defaultBanners.find(d => d.id === b.id);
-        if (matchingDef && b.image.endsWith(".webp") && !b.image.startsWith("http")) {
-          return { ...b, image: matchingDef.image };
-        }
-        return b;
+      // Filter out any default agent-attached images permanently
+      const originalLength = memoryBanners.length;
+      memoryBanners = memoryBanners.filter((b: any) => {
+        const isAgentImage = [
+          "1488521787991-ed7bbaae773c",
+          "1570042225831-d98fa7577f1e",
+          "1531538606174-0f90ff5dce83",
+          "1503676260728-1c00da094a0b",
+          "1507525428034-b723cf961d3e",
+          "1560250097-0b93528c311a",
+          "1509099836639-18ba1795216d"
+        ].some(hash => b.image && b.image.includes(hash));
+        return !isAgentImage;
       });
+
+      // If we filtered out default banners, let's write back the clean array
+      if (memoryBanners.length !== originalLength) {
+        try {
+          await fs.writeFile(tmpFile, JSON.stringify(memoryBanners, null, 2));
+          await fs.mkdir(path.dirname(localFile), { recursive: true }).catch(() => {});
+          await fs.writeFile(localFile, JSON.stringify(memoryBanners, null, 2));
+        } catch {
+          // Ignored
+        }
+      }
+    } else {
+      memoryBanners = [];
     }
 
     res.json(memoryBanners);

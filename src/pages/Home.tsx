@@ -69,64 +69,7 @@ export const Home: React.FC = () => {
     }
   };
 
-  const defaultBanners = [
-    {
-      id: "1",
-      image: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=85&w=2400",
-      title: "Community Impact",
-      description: "Working together to build a sustainable future for our community in Karongi.",
-      cta: "Learn More",
-      link: "/about"
-    },
-    {
-      id: "2",
-      image: "https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?auto=format&fit=crop&q=85&w=2400",
-      title: "The Cow Project",
-      description: "Providing nutrition and economic stability to families through cow sponsorship and distribution.",
-      cta: "Support a Family",
-      link: "/login"
-    },
-    {
-      id: "3",
-      image: "https://images.unsplash.com/photo-1531538606174-0f90ff5dce83?auto=format&fit=crop&q=85&w=2400",
-      title: "Our Dedicated Staff",
-      description: "Meet the passionate individuals working on the front lines to transform lives.",
-      cta: "Meet the Team",
-      link: "/about"
-    },
-    {
-      id: "4",
-      image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=85&w=2400",
-      title: "Student Sponsorship",
-      description: "Empowering the next generation through education and long-term sponsorship programs.",
-      cta: "Sponsor Now",
-      link: "/login"
-    },
-    {
-      id: "5",
-      image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=85&w=2400",
-      title: "Preserving History",
-      description: "Honoring our history while building a bright future for all members of our society.",
-      cta: "Our History",
-      link: "/about"
-    },
-    {
-      id: "6",
-      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=85&w=2400",
-      title: "Leadership & Vision",
-      description: "Guided by transparency and a commitment to serving those who need it most.",
-      cta: "Contact Us",
-      link: "/contact"
-    },
-    {
-      id: "7",
-      image: "https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&q=85&w=2400",
-      title: "Global Partnership",
-      description: "Connecting supporters from around the world to local initiatives that matter.",
-      cta: "Join Us",
-      link: "/signup"
-    }
-  ];
+  const defaultBanners: any[] = [];
 
   const fetchBanners = async () => {
     try {
@@ -134,10 +77,10 @@ export const Home: React.FC = () => {
       if (response.data && response.data.length > 0) {
         setSlides(response.data);
       } else {
-        setSlides(defaultBanners);
+        setSlides([]);
       }
     } catch {
-      setSlides(defaultBanners);
+      setSlides([]);
     } finally {
       setBannersLoading(false);
     }
@@ -423,7 +366,7 @@ export const Home: React.FC = () => {
           <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
             <Loader2 className="animate-spin text-blue-500" size={40} />
           </div>
-        ) : (
+        ) : activeSlides.length > 0 ? (
           <AnimatePresence mode="wait">
             {activeSlides[currentSlide] && (
               <motion.div
@@ -486,6 +429,20 @@ export const Home: React.FC = () => {
               </motion.div>
             )}
           </AnimatePresence>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 flex items-center px-6 md:px-24">
+            <div className="max-w-2xl text-white space-y-6 z-10">
+              <span className="text-blue-400 font-bold uppercase tracking-widest text-xs bg-blue-500/10 px-4 py-1.5 rounded-full inline-block">Welcome to Rubengera</span>
+              <h1 className="text-4xl md:text-6xl font-black leading-tight tracking-tight text-white uppercase">Batotutarigito</h1>
+              <p className="text-sm md:text-lg text-slate-300 leading-relaxed font-normal">
+                Empowering rural families in Rwanda through agricultural cow projects, sustainable education sponsorship, and cyclical wealth generation.
+              </p>
+              <div className="flex flex-wrap gap-4 pt-4">
+                <Link to="/about" className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold px-8 py-4 rounded-2xl shadow-xl transition-all hover:-translate-y-0.5 text-xs uppercase tracking-wider">Our Story</Link>
+                <a href="#contact" className="bg-white/10 hover:bg-white/15 text-white font-extrabold px-8 py-4 rounded-2xl shadow-xl transition-all border border-white/10 hover:-translate-y-0.5 text-xs uppercase tracking-wider">Get in Touch</a>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Slider Controls */}
