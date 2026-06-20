@@ -69,7 +69,32 @@ export const Home: React.FC = () => {
     }
   };
 
-  const defaultBanners: any[] = [];
+  const defaultBanners = [
+    {
+      id: "local-cow",
+      image: "/cow.webp",
+      title: "The Cow Project",
+      description: "Providing nutrition and economic stability to families through cow sponsorship and distribution.",
+      cta: "Support a Family",
+      link: "/login"
+    },
+    {
+      id: "local-umuganda",
+      image: "/umuganda.webp",
+      title: "Community Impact",
+      description: "Working together to build a sustainable future for our community in Karongi.",
+      cta: "Learn More",
+      link: "/about"
+    },
+    {
+      id: "local-gufasha",
+      image: "/gufasha2.webp",
+      title: "Student Sponsorship",
+      description: "Empowering the next generation through education and long-term sponsorship programs.",
+      cta: "Sponsor Now",
+      link: "/login"
+    }
+  ];
 
   const fetchBanners = async () => {
     try {

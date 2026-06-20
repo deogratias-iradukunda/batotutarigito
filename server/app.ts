@@ -507,61 +507,73 @@ app.get("/api/resources/admins", async (req, res) => {
 });
 
 // --- Homepage Banners Routes ---
-// Default banners fallback - empty by default to prevent showing unapproved agent-attached images
-const defaultBanners: any[] = [];
-
-let memoryBanners: any[] | null = null;
+// Default banners fallback - using exclusively pre-existing local assets in /public which are approved and clean
+const defaultBanners = [
+  {
+    id: "local-cow",
+    image: "/cow.webp",
+    title: "The Cow Project",
+    description: "Providing nutrition and economic stability to families through cow sponsorship and distribution.",
+    cta: "Support a Family",
+    link: "/login"
+  },
+  {
+    id: "local-umuganda",
+    image: "/umuganda.webp",
+    title: "Community Impact",
+    description: "Working together to build a sustainable future for our community in Karongi.",
+    cta: "Learn More",
+    link: "/about"
+  },
+  {
+    id: "local-gufasha",
+    image: "/gufasha2.webp",
+    title: "Student Sponsorship",
+    description: "Empowering the next generation through education and long-term sponsorship programs.",
+    cta: "Sponsor Now",
+    link: "/login"
+  }
+];
 
 app.get("/api/home-banners", async (req, res) => {
   try {
-    const tmpFile = path.join(os.tmpdir(), "home_banners.json");
-    const localFile = path.join(process.cwd(), "uploads", "home_banners.json");
+    const setting = await prisma.setting.findUnique({
+      where: { key: "home_banners" }
+    });
 
-    if (!memoryBanners) {
+    let banners = [];
+    if (setting) {
       try {
-        const data = await fs.readFile(tmpFile, "utf-8");
-        memoryBanners = JSON.parse(data);
-      } catch {
-        try {
-          const data = await fs.readFile(localFile, "utf-8");
-          memoryBanners = JSON.parse(data);
-        } catch {
-          memoryBanners = [];
-        }
+        banners = JSON.parse(setting.value);
+      } catch (e) {
+        banners = [];
       }
     }
 
-    if (memoryBanners) {
-      // Filter out any default agent-attached images permanently
-      const originalLength = memoryBanners.length;
-      memoryBanners = memoryBanners.filter((b: any) => {
-        const isAgentImage = [
-          "1488521787991-ed7bbaae773c",
-          "1570042225831-d98fa7577f1e",
-          "1531538606174-0f90ff5dce83",
-          "1503676260728-1c00da094a0b",
-          "1507525428034-b723cf961d3e",
-          "1560250097-0b93528c311a",
-          "1509099836639-18ba1795216d"
-        ].some(hash => b.image && b.image.includes(hash));
-        return !isAgentImage;
+    // Filter out any default agent-attached images permanently
+    banners = banners.filter((b: any) => {
+      const isAgentImage = [
+        "1488521787991-ed7bbaae773c",
+        "1570042225831-d98fa7577f1e",
+        "1531538606174-0f90ff5dce83",
+        "1503676260728-1c00da094a0b",
+        "1507525428034-b723cf961d3e",
+        "1560250097-0b93528c311a",
+        "1509099836639-18ba1795216d"
+      ].some(hash => b.image && b.image.includes(hash));
+      return !isAgentImage;
+    });
+
+    if (banners.length === 0) {
+      banners = [...defaultBanners];
+      await prisma.setting.upsert({
+        where: { key: "home_banners" },
+        update: { value: JSON.stringify(banners) },
+        create: { key: "home_banners", value: JSON.stringify(banners) }
       });
-
-      // If we filtered out default banners, let's write back the clean array
-      if (memoryBanners.length !== originalLength) {
-        try {
-          await fs.writeFile(tmpFile, JSON.stringify(memoryBanners, null, 2));
-          await fs.mkdir(path.dirname(localFile), { recursive: true }).catch(() => {});
-          await fs.writeFile(localFile, JSON.stringify(memoryBanners, null, 2));
-        } catch {
-          // Ignored
-        }
-      }
-    } else {
-      memoryBanners = [];
     }
 
-    res.json(memoryBanners);
+    res.json(banners);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -578,15 +590,21 @@ app.post("/api/home-banners", requireAuth, requireAdmin, async (req: any, res) =
       return res.status(400).json({ error: "Pasting or uploading Unsplash images is blocked on this platform. Please upload a custom image or use a different non-Unsplash URL." });
     }
 
-    if (!memoryBanners) {
+    const setting = await prisma.setting.findUnique({
+      where: { key: "home_banners" }
+    });
+
+    let banners = [];
+    if (setting) {
       try {
-        const tmpFile = path.join(os.tmpdir(), "home_banners.json");
-        const localFile = path.join(process.cwd(), "uploads", "home_banners.json");
-        const data = await fs.readFile(tmpFile, "utf-8").catch(() => fs.readFile(localFile, "utf-8"));
-        memoryBanners = JSON.parse(data);
-      } catch {
-        memoryBanners = [...defaultBanners];
+        banners = JSON.parse(setting.value);
+      } catch (e) {
+        banners = [];
       }
+    }
+
+    if (banners.length === 0) {
+      banners = [...defaultBanners];
     }
 
     const newBanner = {
@@ -598,16 +616,14 @@ app.post("/api/home-banners", requireAuth, requireAdmin, async (req: any, res) =
       link: link || "/"
     };
 
-    memoryBanners.push(newBanner);
-    
-    try {
-      const tmpFile = path.join(os.tmpdir(), "home_banners.json");
-      await fs.mkdir(path.dirname(tmpFile), { recursive: true }).catch(() => {});
-      await fs.writeFile(tmpFile, JSON.stringify(memoryBanners, null, 2));
-    } catch (writeErr) {
-      console.warn("Unable to persist banners to filesystem, using in-memory updates:", writeErr);
-    }
-    
+    banners.push(newBanner);
+
+    await prisma.setting.upsert({
+      where: { key: "home_banners" },
+      update: { value: JSON.stringify(banners) },
+      create: { key: "home_banners", value: JSON.stringify(banners) }
+    });
+
     res.json(newBanner);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -623,36 +639,41 @@ app.put("/api/home-banners/:id", requireAuth, requireAdmin, async (req: any, res
       return res.status(400).json({ error: "Pasting or uploading Unsplash images is blocked on this platform. Please upload a custom image or use a different non-Unsplash URL." });
     }
 
-    if (!memoryBanners) {
+    const setting = await prisma.setting.findUnique({
+      where: { key: "home_banners" }
+    });
+
+    let banners = [];
+    if (setting) {
       try {
-        const tmpFile = path.join(os.tmpdir(), "home_banners.json");
-        const localFile = path.join(process.cwd(), "uploads", "home_banners.json");
-        const data = await fs.readFile(tmpFile, "utf-8").catch(() => fs.readFile(localFile, "utf-8"));
-        memoryBanners = JSON.parse(data);
-      } catch {
-        memoryBanners = [...defaultBanners];
+        banners = JSON.parse(setting.value);
+      } catch (e) {
+        banners = [];
       }
     }
 
-    const slideIndex = memoryBanners.findIndex((b: any) => b.id === id);
+    if (banners.length === 0) {
+      banners = [...defaultBanners];
+    }
+
+    const slideIndex = banners.findIndex((b: any) => b.id === id);
     if (slideIndex === -1) {
       return res.status(404).json({ error: "Slide banner not found" });
     }
 
-    if (image !== undefined) memoryBanners[slideIndex].image = image;
-    if (title !== undefined) memoryBanners[slideIndex].title = title;
-    if (description !== undefined) memoryBanners[slideIndex].description = description;
-    if (cta !== undefined) memoryBanners[slideIndex].cta = cta;
-    if (link !== undefined) memoryBanners[slideIndex].link = link;
+    if (image !== undefined) banners[slideIndex].image = image;
+    if (title !== undefined) banners[slideIndex].title = title;
+    if (description !== undefined) banners[slideIndex].description = description;
+    if (cta !== undefined) banners[slideIndex].cta = cta;
+    if (link !== undefined) banners[slideIndex].link = link;
 
-    try {
-      const tmpFile = path.join(os.tmpdir(), "home_banners.json");
-      await fs.writeFile(tmpFile, JSON.stringify(memoryBanners, null, 2));
-    } catch (writeErr) {
-      console.warn("Unable to persist banners to filesystem, using in-memory updates:", writeErr);
-    }
+    await prisma.setting.upsert({
+      where: { key: "home_banners" },
+      update: { value: JSON.stringify(banners) },
+      create: { key: "home_banners", value: JSON.stringify(banners) }
+    });
 
-    res.json(memoryBanners[slideIndex]);
+    res.json(banners[slideIndex]);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -661,57 +682,57 @@ app.put("/api/home-banners/:id", requireAuth, requireAdmin, async (req: any, res
 app.delete("/api/home-banners/:id", requireAuth, requireAdmin, async (req: any, res) => {
   try {
     const { id } = req.params;
-    if (!memoryBanners) {
+
+    const setting = await prisma.setting.findUnique({
+      where: { key: "home_banners" }
+    });
+
+    let banners = [];
+    if (setting) {
       try {
-        const tmpFile = path.join(os.tmpdir(), "home_banners.json");
-        const localFile = path.join(process.cwd(), "uploads", "home_banners.json");
-        const data = await fs.readFile(tmpFile, "utf-8").catch(() => fs.readFile(localFile, "utf-8"));
-        memoryBanners = JSON.parse(data);
-      } catch {
-        memoryBanners = [...defaultBanners];
+        banners = JSON.parse(setting.value);
+      } catch (e) {
+        banners = [];
       }
     }
 
-    memoryBanners = memoryBanners.filter((b: any) => b.id !== id);
-    
-    try {
-      const tmpFile = path.join(os.tmpdir(), "home_banners.json");
-      await fs.writeFile(tmpFile, JSON.stringify(memoryBanners, null, 2));
-    } catch (writeErr) {
-      console.warn("Unable to persist banners to filesystem, using in-memory updates:", writeErr);
+    if (banners.length === 0) {
+      banners = [...defaultBanners];
     }
-    
+
+    banners = banners.filter((b: any) => b.id !== id);
+
+    await prisma.setting.upsert({
+      where: { key: "home_banners" },
+      update: { value: JSON.stringify(banners) },
+      create: { key: "home_banners", value: JSON.stringify(banners) }
+    });
+
     res.json({ success: true, message: "Banner deleted successfully" });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-let memoryImpactImage: string | null = null;
 const defaultImpactImage = "/umuganda.webp";
 
 app.get("/api/impact-image", async (req, res) => {
   try {
-    if (memoryImpactImage && !/unsplash\.com/i.test(memoryImpactImage)) {
-      return res.json({ image: memoryImpactImage });
-    }
-    const tmpFile = path.join(os.tmpdir(), "impact_image.json");
-    const localFile = path.join(process.cwd(), "uploads", "impact_image.json");
-    
-    try {
-      const data = await fs.readFile(tmpFile, "utf-8");
-      const parsed = JSON.parse(data);
-      memoryImpactImage = parsed.image && !/unsplash\.com/i.test(parsed.image) ? parsed.image : defaultImpactImage;
-    } catch {
+    const setting = await prisma.setting.findUnique({
+      where: { key: "impact_image" }
+    });
+
+    let imageVal = defaultImpactImage;
+    if (setting) {
       try {
-        const data = await fs.readFile(localFile, "utf-8");
-        const parsed = JSON.parse(data);
-        memoryImpactImage = parsed.image && !/unsplash\.com/i.test(parsed.image) ? parsed.image : defaultImpactImage;
-      } catch {
-        memoryImpactImage = defaultImpactImage;
-      }
+        const parsed = JSON.parse(setting.value);
+        if (parsed && parsed.image && !/unsplash\.com/i.test(parsed.image)) {
+          imageVal = parsed.image;
+        }
+      } catch (e) {}
     }
-    res.json({ image: memoryImpactImage });
+
+    res.json({ image: imageVal });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -726,10 +747,14 @@ app.put("/api/impact-image", requireAuth, requireAdmin, async (req: any, res) =>
     if (/unsplash\.com/i.test(image)) {
       return res.status(400).json({ error: "Pasting or uploading Unsplash images is blocked on this platform. Please upload a custom image or use a different non-Unsplash URL." });
     }
-    memoryImpactImage = image;
-    const tmpFile = path.join(os.tmpdir(), "impact_image.json");
-    await fs.writeFile(tmpFile, JSON.stringify({ image: memoryImpactImage }, null, 2));
-    res.json({ image: memoryImpactImage });
+
+    await prisma.setting.upsert({
+      where: { key: "impact_image" },
+      update: { value: JSON.stringify({ image }) },
+      create: { key: "impact_image", value: JSON.stringify({ image }) }
+    });
+
+    res.json({ image });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
