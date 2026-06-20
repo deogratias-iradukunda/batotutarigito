@@ -4,10 +4,14 @@ import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
 import { sendMessageStream, GeminiError } from "../services/geminiService";
 import { Bot, Sparkles, Trash2, AlertCircle, RefreshCw, PlusCircle } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 export function ChatInterface() {
+  const { user: authUser } = useAuth();
+  const storageKey = authUser ? `batotutarigito-chat-history-${authUser.id}` : "batotutarigito-chat-history-guest";
+
   const [messages, setMessages] = useState<Message[]>(() => {
-    const saved = localStorage.getItem("batotutarigito-chat-history");
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -32,9 +36,28 @@ export function ChatInterface() {
   };
 
   useEffect(() => {
-    localStorage.setItem("batotutarigito-chat-history", JSON.stringify(messages));
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+        return;
+      } catch (err) {
+        console.error("Failed to load chat history:", err);
+      }
+    }
+    setMessages([
+      {
+        role: Role.MODEL,
+        content: "Hello! I'm your Virtual Guide. How can I help you today?",
+        timestamp: Date.now(),
+      },
+    ]);
+  }, [storageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(messages));
     scrollToBottom();
-  }, [messages]);
+  }, [messages, storageKey]);
 
   const handleSendMessage = async (content: string) => {
     setError(null);
@@ -118,7 +141,7 @@ export function ChatInterface() {
       },
     ];
     setMessages(defaultMessages);
-    localStorage.setItem("batotutarigito-chat-history", JSON.stringify(defaultMessages));
+    localStorage.setItem(storageKey, JSON.stringify(defaultMessages));
     setError(null);
   };
 

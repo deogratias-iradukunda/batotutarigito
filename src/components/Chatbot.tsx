@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { MessageSquare, Send, X, Bot, User, Loader2, Trash2, RefreshCw, AlertCircle } from "lucide-react";
 import { sendMessageStream, GeminiError } from "../services/geminiService";
 import { Message, Role } from "../types";
+import { useAuth } from "../context/AuthContext";
 
 const STORAGE_KEY = "batotutarigito-chat-history";
 
@@ -73,6 +74,7 @@ const LOCAL_TRANSLATIONS: Record<string, {
 };
 
 export const Chatbot: React.FC = () => {
+  const { user: authUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState<string>(() => {
     return localStorage.getItem("i18nextLng") || "en";
@@ -80,8 +82,10 @@ export const Chatbot: React.FC = () => {
 
   const activeTrans = LOCAL_TRANSLATIONS[currentLang] || LOCAL_TRANSLATIONS["en"];
 
+  const storageKey = authUser ? `batotutarigito-chat-history-${authUser.id}` : "batotutarigito-chat-history-guest";
+
   const [messages, setMessages] = useState<Message[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(storageKey);
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -102,6 +106,25 @@ export const Chatbot: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<{ message: string; type: string } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+        return;
+      } catch (err) {
+        console.error("Failed to load chat history:", err);
+      }
+    }
+    setMessages([
+      { 
+        role: Role.MODEL, 
+        content: activeTrans.welcome,
+        timestamp: Date.now()
+      }
+    ]);
+  }, [storageKey, activeTrans.welcome]);
 
   useEffect(() => {
     const handleLangChange = () => {
@@ -132,11 +155,11 @@ export const Chatbot: React.FC = () => {
   }, [currentLang, messages.length]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    localStorage.setItem(storageKey, JSON.stringify(messages));
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, storageKey]);
 
   const handleSend = async (text: string = input) => {
     if (!text.trim()) return;
@@ -206,7 +229,7 @@ export const Chatbot: React.FC = () => {
       }
     ];
     setMessages(defaultMessages);
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(storageKey);
     setError(null);
   };
 
