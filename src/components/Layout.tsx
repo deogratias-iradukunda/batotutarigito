@@ -39,7 +39,7 @@ export const Footer: React.FC = () => {
         <div>
           <h4 className="text-white font-semibold mb-4 uppercase text-xs tracking-wider">Credits</h4>
           <div className="text-xs space-y-1">
-            <p>Developers: Arcene Irakoze, Deogratias Iradukunda</p>
+            <p>Developers: Arcene Irakoze, Deogratias Iradukunda, Niyomugabo Jacques</p>
             <p>System Analyst: Joshua Uwizeyimana</p>
             <p className="pt-4 text-blue-500 font-medium">Powered by BatoTutariGito Management System</p>
           </div>

@@ -59,6 +59,10 @@ const app = express();
 
 app.use(express.json());
 
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 // Enable CORS for external client applications like Vercel deployments
 app.use((req, res, next) => {
   const origin = req.headers.origin || "*";
@@ -1373,7 +1377,7 @@ app.post("/api/send-email", async (req, res) => {
 
 app.post("/api/chat", async (req, res) => {
   const { history, message, language } = req.body;
-  const geminiKey = process.env.GEMINI_API_KEY || "AIzaSyC9QLOFqCRPEma_HqD_fqkUZaEQVIgJC1E";
+  const geminiKey = process.env.GEMINI_API_KEY;
   
   const langNameMap: Record<string, string> = {
     rw: "Kinyarwanda",
@@ -1396,41 +1400,47 @@ app.post("/api/chat", async (req, res) => {
     "   - Developers (who created this system):\n" +
     "     * Arcene Irakoze: tel: 0796599461, email: arceneirakoze@proton.me\n" +
     "     * Deogratias Iradukunda: tel: 0728654233, email: deogratiasiradukunda@proton.me\n" +
+    "     * Niyomugabo Jacques: tel: 0785775471, email: niyomugabojacques825@gmail.com\n" +
     "   - System Analyst:\n" +
     "     * Joshua Uwizeyimana: tel: 0796542323, email: uwizeyimanajoshua@gmail.com\n" +
     "   You must know them well. If any user asks about who built this app, system design, developers, programmers, or who the system analyst or technical coordinators are, proudly provide these exact names, telephone numbers, and email addresses!";
 
-  const apiHistory = history.map((msg: any) => ({
-    role: msg.role === "user" ? "user" : "model",
-    parts: [{ text: msg.content }]
-  }));
-
-  const modelsToTry = ["gemini-3.5-flash", "gemini-3.1-flash-lite"];
   let success = false;
 
-  for (const modelName of modelsToTry) {
-    try {
-      const ai = new GoogleGenAI({ 
-        apiKey: geminiKey,
-        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
-      });
-      
-      const chat = ai.chats.create({
-        model: modelName,
-        config: { systemInstruction },
-        history: apiHistory
-      });
+  if (geminiKey && geminiKey.trim()) {
+    const apiHistory = (history || []).map((msg: any) => ({
+      role: msg.role === "user" ? "user" : "model",
+      parts: [{ text: msg.content || "" }]
+    }));
 
-      const result = await chat.sendMessageStream({ message });
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      for await (const chunk of result) {
-        res.write(chunk.text);
+    const modelsToTry = ["gemini-3.7-flash", "gemini-3.1-flash-lite"];
+
+    for (const modelName of modelsToTry) {
+      try {
+        const ai = new GoogleGenAI({ 
+          apiKey: geminiKey.trim(),
+          httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+        });
+        
+        const chat = ai.chats.create({
+          model: modelName,
+          config: { systemInstruction },
+          history: apiHistory
+        });
+
+        const result = await chat.sendMessageStream({ message });
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        for await (const chunk of result) {
+          if (chunk.text) {
+            res.write(chunk.text);
+          }
+        }
+        res.end();
+        success = true;
+        break;
+      } catch (err: any) {
+        console.warn(`⚠️ AI chat execution failed with model ${modelName}:`, err.message || err);
       }
-      res.end();
-      success = true;
-      break;
-    } catch (err: any) {
-      console.warn(`⚠️ AI chat execution failed with model ${modelName}:`, err.message || err);
     }
   }
 
@@ -1439,11 +1449,12 @@ app.post("/api/chat", async (req, res) => {
     const msgLower = message.toLowerCase();
     
     if (language === "rw") {
-      if (msgLower.includes("developer") || msgLower.includes("creator") || msgLower.includes("dev") || msgLower.includes("program") || msgLower.includes("built") || msgLower.includes("made") || msgLower.includes("arcene") || msgLower.includes("deogratias") || msgLower.includes("coordinator") || msgLower.includes("urubuga")) {
+      if (msgLower.includes("developer") || msgLower.includes("creator") || msgLower.includes("dev") || msgLower.includes("program") || msgLower.includes("built") || msgLower.includes("made") || msgLower.includes("arcene") || msgLower.includes("deogratias") || msgLower.includes("jacques") || msgLower.includes("niyomugabo") || msgLower.includes("coordinator") || msgLower.includes("urubuga")) {
         reply = "Abaterankunga cyangwa aba-developers b'iyi sisitemu yacu ni:\n\n" +
                 "👨‍💻 **Abashinzwe iterambere b'Abaporogaramu na Tekiniki:**\n" +
                 "- **Arcene Irakoze** (Tel: `0796599461`, Imeri: `arceneirakoze@proton.me`)\n" +
-                "- **Deogratias Iradukunda** (Tel: `0728654233`, Imeri: `deogratiasiradukunda@proton.me`)\n\n" +
+                "- **Deogratias Iradukunda** (Tel: `0728654233`, Imeri: `deogratiasiradukunda@proton.me`)\n" +
+                "- **Niyomugabo Jacques** (Tel: `0785775471`, Imeri: `niyomugabojacques825@gmail.com`)\n\n" +
                 "Bubitse kandi bategura iyi porogaramu yose kugira ngo ifashe BatoTutariGito mu micungire inoze n'ubumwe bw'amakuru!";
       } else if (msgLower.includes("analyst") || msgLower.includes("joshua") || msgLower.includes("uwizeyimana")) {
         reply = "Umusesenguzi w'Imitunganyirize y'iyi Sisitemu (System Analyst) ni **Joshua Uwizeyimana**.\n" +
@@ -1455,18 +1466,19 @@ app.post("/api/chat", async (req, res) => {
       } else if (msgLower.includes("subira") || msgLower.includes("sponsor") || msgLower.includes("student") || msgLower.includes("education") || msgLower.includes("ishuri") || msgLower.includes("umunyeshuri")) {
         reply = "BatoTutariGito itanga inkunga y'ishuri n'ibikoresho ku banyeshuri bafite amikoro make kuva mu mashuri abanza, ayisumbuye kugeza no mu mashuri makuru.";
       } else if (msgLower.includes("contact") || msgLower.includes("email") || msgLower.includes("phone") || msgLower.includes("twandikire")) {
-        reply = "Ushobora kutwandikira binyuze ku rupapuro rwacu rwa 'Twandikire', ukavugana n'aba-developers bacu (Arcene / Deogratias), cyangwa umuyobozi wacu Clement Ngirababyeyi imeri: cngirababyeyi@gmail.com.";
+        reply = "Ushobora kutwandikira binyuze ku rupapuro rwacu rwa 'Twandikire', ukavugana n'aba-developers bacu (Arcene / Deogratias / Jacques), cyangwa umuyobozi wacu Clement Ngirababyeyi imeri: cngirababyeyi@gmail.com.";
       } else if (msgLower.includes("admin") || msgLower.includes("clement")) {
         reply = "Umuyobozi wacu mukuru akaba n'umuhuzabikorwa ni Clement Ngirababyeyi (cngirababyeyi@gmail.com).";
       } else {
         reply = "Muraho! Nditeguye kugufasha ku bijyanye na BatoTutariGito, umushinga w'inka, gushyigikira abanyeshuri, cyangwa sisitemu yacu. Ni iki nakugira inama?";
       }
     } else if (language === "fr") {
-      if (msgLower.includes("developer") || msgLower.includes("creator") || msgLower.includes("dev") || msgLower.includes("program") || msgLower.includes("built") || msgLower.includes("made") || msgLower.includes("arcene") || msgLower.includes("deogratias") || msgLower.includes("coordinator")) {
+      if (msgLower.includes("developer") || msgLower.includes("creator") || msgLower.includes("dev") || msgLower.includes("program") || msgLower.includes("built") || msgLower.includes("made") || msgLower.includes("arcene") || msgLower.includes("deogratias") || msgLower.includes("jacques") || msgLower.includes("niyomugabo") || msgLower.includes("coordinator")) {
         reply = "Les développeurs de logiciels et coordinateurs techniques de notre plateforme sont :\n\n" +
                 "👨‍💻 **Développeurs & Coordinateurs :**\n" +
                 "- **Arcene Irakoze** (Tél: `0796599461`, Email: `arceneirakoze@proton.me`)\n" +
-                "- **Deogratias Iradukunda** (Tél: `0728654233`, Email: `deogratiasiradukunda@proton.me`)\n\n" +
+                "- **Deogratias Iradukunda** (Tél: `0728654233`, Email: `deogratiasiradukunda@proton.me`)\n" +
+                "- **Niyomugabo Jacques** (Tél: `0785775471`, Email: `niyomugabojacques825@gmail.com`)\n\n" +
                 "Ils ont programmé et conçu cette application entière pour numériser la gestion de BatoTutariGito.";
       } else if (msgLower.includes("analyst") || msgLower.includes("joshua") || msgLower.includes("uwizeyimana")) {
         reply = "Notre Analyste Système est **Joshua Uwizeyimana**.\n" +
@@ -1485,11 +1497,12 @@ app.post("/api/chat", async (req, res) => {
         reply = "Bonjour! Je suis ravi de vous aider concernant l'ONG BatoTutariGito, nos programmes ou les créateurs de notre plateforme. Comment puis-je vous aider ?";
       }
     } else if (language === "sw") {
-      if (msgLower.includes("developer") || msgLower.includes("creator") || msgLower.includes("dev") || msgLower.includes("program") || msgLower.includes("built") || msgLower.includes("made") || msgLower.includes("arcene") || msgLower.includes("deogratias") || msgLower.includes("coordinator")) {
+      if (msgLower.includes("developer") || msgLower.includes("creator") || msgLower.includes("dev") || msgLower.includes("program") || msgLower.includes("built") || msgLower.includes("made") || msgLower.includes("arcene") || msgLower.includes("deogratias") || msgLower.includes("jacques") || msgLower.includes("niyomugabo") || msgLower.includes("coordinator")) {
         reply = "Wasanidi programu na waratibu wa kiufundi wa mfumo huu ni:\n\n" +
                 "👨‍💻 **Wasanidi Programu & Waratibu:**\n" +
                 "- **Arcene Irakoze** (Simu: `0796599461`, Barua pepe: `arceneirakoze@proton.me`)\n" +
-                "- **Deogratias Iradukunda** (Simu: `0728654233`, Barua pepe: `deogratiasiradukunda@proton.me`)\n\n" +
+                "- **Deogratias Iradukunda** (Simu: `0728654233`, Barua pepe: `deogratiasiradukunda@proton.me`)\n" +
+                "- **Niyomugabo Jacques** (Simu: `0785775471`, Barua pepe: `niyomugabojacques825@gmail.com`)\n\n" +
                 "Walitengeneza mfumo huu mzima ili kutosheleza usimamizi bora wa BatoTutariGito!";
       } else if (msgLower.includes("analyst") || msgLower.includes("joshua") || msgLower.includes("uwizeyimana")) {
         reply = "Mchambuzi wa Mfumo wetu ni **Joshua Uwizeyimana**.\n" +
@@ -1508,11 +1521,12 @@ app.post("/api/chat", async (req, res) => {
         reply = "Jambo! Niko tayari kukusaidia kuhusu BatoTutariGito, mradi wetu wa ng'ombe, masomo au wasanidi wetu. Nikusaidie vipi?";
       }
     } else {
-      if (msgLower.includes("developer") || msgLower.includes("creator") || msgLower.includes("dev") || msgLower.includes("program") || msgLower.includes("built") || msgLower.includes("made") || msgLower.includes("arcene") || msgLower.includes("deogratias") || msgLower.includes("coordinator")) {
+      if (msgLower.includes("developer") || msgLower.includes("creator") || msgLower.includes("dev") || msgLower.includes("program") || msgLower.includes("built") || msgLower.includes("made") || msgLower.includes("arcene") || msgLower.includes("deogratias") || msgLower.includes("jacques") || msgLower.includes("niyomugabo") || msgLower.includes("coordinator")) {
         reply = "The software developers and technical coordinators of our system are:\n\n" +
                 "👨‍💻 **NGO Developers & Coordinators:**\n" +
                 "- **Arcene Irakoze** (Tel: `0796599461`, Email: `arceneirakoze@proton.me`)\n" +
-                "- **Deogratias Iradukunda** (Tel: `0728654233`, Email: `deogratiasiradukunda@proton.me`)\n\n" +
+                "- **Deogratias Iradukunda** (Tel: `0728654233`, Email: `deogratiasiradukunda@proton.me`)\n" +
+                "- **Niyomugabo Jacques** (Tel: `0785775471`, Email: `niyomugabojacques825@gmail.com`)\n\n" +
                 "They programmed and developed this entire platform to enable digitized management and complete transparency for BatoTutariGito!";
       } else if (msgLower.includes("analyst") || msgLower.includes("joshua") || msgLower.includes("uwizeyimana")) {
         reply = "Our System Analyst is **Joshua Uwizeyimana**.\n" +
@@ -1524,7 +1538,7 @@ app.post("/api/chat", async (req, res) => {
       } else if (msgLower.includes("sponsor") || msgLower.includes("student") || msgLower.includes("education") || msgLower.includes("school")) {
         reply = "BatoTutariGito provides local student sponsorships to help children from vulnerable families with study fees, school resources, and tutoring support across primary, secondary, and college levels.";
       } else if (msgLower.includes("contact") || msgLower.includes("email") || msgLower.includes("phone")) {
-        reply = "You can contact BatoTutariGito via our Contact Us message board, our software developers/coordinators (Arcene / Deogratias), or our main administrator, Clement Ngirababyeyi, directly at cngirababyeyi@gmail.com.";
+        reply = "You can contact BatoTutariGito via our Contact Us message board, our software developers/coordinators (Arcene / Deogratias / Jacques), or our main administrator, Clement Ngirababyeyi, directly at cngirababyeyi@gmail.com.";
       } else if (msgLower.includes("admin") || msgLower.includes("who is") || msgLower.includes("clement")) {
         reply = "Our main administrator and project coordinator is Clement Ngirababyeyi. You can reach him at cngirababyeyi@gmail.com.";
       } else if (msgLower.includes("hello") || msgLower.includes("hi ") || msgLower.includes("hey")) {

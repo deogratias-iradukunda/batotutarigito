@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { Award, BookOpen, Heart, Landmark, Users, CheckCircle, Shield, Globe } from "lucide-react";
+import { Award, BookOpen, Heart, Landmark, Users, CheckCircle, Shield, Globe, Mail, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SEO } from "../components/SEO";
 import api from "../lib/api";
@@ -58,10 +58,36 @@ export const About: React.FC = () => {
   ];
 
   const team = [
-    { name: "Joshua Uwizeyimana", role: "System Analyst & Lead Planner" },
-    { name: "Deogratias Iradukunda", role: "Software Architect & Manager" },
-    { name: "Arcene Irakoze", role: "NGO Operations Developer" },
-    { name: "Clement Ngirababyeyi", role: "Lead Coordinator - Rwanda" }
+    { 
+      name: "Joshua Uwizeyimana", 
+      role: "System Analyst & Lead Planner",
+      phone: "0796542323",
+      email: "uwizeyimanajoshua@gmail.com"
+    },
+    { 
+      name: "Deogratias Iradukunda", 
+      role: "Software Architect & Manager",
+      phone: "0728654233",
+      email: "deogratiasiradukunda@proton.me"
+    },
+    { 
+      name: "Arcene Irakoze", 
+      role: "NGO Operations Developer",
+      phone: "0796599461",
+      email: "arceneirakoze@proton.me"
+    },
+    { 
+      name: "Niyomugabo Jacques", 
+      role: "Full Stack Developer",
+      phone: "0785775471",
+      email: "niyomugabojacques825@gmail.com"
+    },
+    { 
+      name: "Clement Ngirababyeyi", 
+      role: "Lead Coordinator - Rwanda",
+      phone: "+250 722 529 202",
+      email: "cngirababyeyi@gmail.com"
+    }
   ];
 
   return (
@@ -181,16 +207,32 @@ export const About: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 justify-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
           {team.map((member, i) => (
-            <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-blue-500 dark:hover:border-slate-700 transition-colors flex flex-col items-center space-y-4">
+            <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:border-blue-500 dark:hover:border-slate-700 transition-all flex flex-col items-center space-y-4 text-center">
               <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 text-xl font-black">
                 {member.name.charAt(0)}
               </div>
-              <div className="text-center">
+              <div className="space-y-1">
                 <h4 className="font-extrabold text-slate-900 dark:text-white text-base">{member.name}</h4>
-                <p className="text-xs text-slate-400 uppercase tracking-wider block mt-1 font-semibold">{member.role}</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wider font-semibold">{member.role}</p>
               </div>
+              {(member.phone || member.email) && (
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 w-full space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                  {member.phone && (
+                    <a href={`tel:${member.phone.replace(/\s+/g, '')}`} className="flex items-center justify-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                      <Phone size={13} className="text-blue-500 flex-shrink-0" />
+                      <span>{member.phone}</span>
+                    </a>
+                  )}
+                  {member.email && (
+                    <a href={`mailto:${member.email}`} className="flex items-center justify-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors break-all">
+                      <Mail size={13} className="text-blue-500 flex-shrink-0" />
+                      <span>{member.email}</span>
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
