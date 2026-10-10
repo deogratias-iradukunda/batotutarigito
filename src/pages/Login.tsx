@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import api from "../lib/api";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
-import { Lock, Mail, Eye, EyeOff, ArrowRight, Loader2, X } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, ArrowRight, Loader2, X, KeyRound, CheckCircle2 } from "lucide-react";
 import { Logo } from "../components/Logo";
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
@@ -14,6 +14,11 @@ export const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [forgotPassword, setForgotPassword] = useState(false);
+  const [resetStep, setResetStep] = useState<"request" | "verify">("request");
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
   
   // Google Simulated Sign-In Modal States
   const [showGoogleModal, setShowGoogleModal] = useState(false);
@@ -97,9 +102,65 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  const handleRequestResetCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.info("Password reset via API not yet implemented. Contact admin.");
+    if (!email) {
+      toast.error("Please enter your email address.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await api.post("/api/auth/forgot-password", { email });
+      toast.success(response.data.message || "Reset code sent! Check your email.");
+      setResetStep("verify");
+    } catch (error: any) {
+      const rawError = error.response?.data?.error || error.message || "Failed to send reset code";
+      const errorMsg = typeof rawError === "object" ? (rawError.message || JSON.stringify(rawError)) : rawError;
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetCode.trim()) {
+      toast.error("Please enter the 6-digit verification code.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await api.post("/api/auth/reset-password", {
+        email,
+        code: resetCode.trim(),
+        newPassword,
+      });
+      toast.success(response.data.message || "Password updated successfully!");
+      if (response.data.token && response.data.user) {
+        login(response.data.token, response.data.user);
+        navigate(from, { replace: true });
+      } else {
+        setForgotPassword(false);
+        setResetStep("request");
+        setResetCode("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } catch (error: any) {
+      const rawError = error.response?.data?.error || error.message || "Failed to reset password";
+      const errorMsg = typeof rawError === "object" ? (rawError.message || JSON.stringify(rawError)) : rawError;
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -114,16 +175,20 @@ export const Login: React.FC = () => {
             <Logo size="lg" />
           </div>
           <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
-            {forgotPassword ? "Reset Password" : "Welcome Back"}
+            {forgotPassword 
+              ? (resetStep === "verify" ? "New Password" : "Reset Password") 
+              : "Welcome Back"}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm">
             {forgotPassword 
-              ? "Enter your email to receive a reset link" 
+              ? (resetStep === "verify" 
+                  ? `Enter code sent to ${email} and your new password` 
+                  : "Enter your registered email to receive a 6-digit reset code") 
               : "Login to access your BatoTutariGito dashboard"}
           </p>
         </div>
 
-        <form onSubmit={forgotPassword ? handleForgotPassword : handleLogin} className="space-y-6">
+        <form onSubmit={forgotPassword ? (resetStep === "verify" ? handleConfirmResetPassword : handleRequestResetCode) : handleLogin} className="space-y-6">
           {!forgotPassword && (
             <>
               <button 
@@ -148,20 +213,88 @@ export const Login: React.FC = () => {
             </>
           )}
 
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input 
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white transition-all font-medium"
-              />
+          {(!forgotPassword || resetStep === "request") && (
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white transition-all font-medium"
+                />
+              </div>
             </div>
-          </div>
+          )}
+
+          {forgotPassword && resetStep === "verify" && (
+            <>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">6-Digit Reset Code</label>
+                  <button
+                    type="button"
+                    onClick={handleRequestResetCode}
+                    className="text-xs font-semibold text-blue-600 hover:underline"
+                  >
+                    Resend Code
+                  </button>
+                </div>
+                <div className="relative">
+                  <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <input 
+                    type="text"
+                    required
+                    maxLength={6}
+                    value={resetCode}
+                    onChange={(e) => setResetCode(e.target.value)}
+                    placeholder="123456"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white tracking-widest text-lg font-mono font-bold transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">New Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <input 
+                    type={showNewPassword ? "text" : "password"}
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-12 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white transition-all font-medium"
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Confirm New Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <input 
+                    type={showNewPassword ? "text" : "password"}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter new password"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-12 pr-12 py-3 outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white transition-all font-medium"
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           {!forgotPassword && (
             <div className="space-y-2">
@@ -169,7 +302,10 @@ export const Login: React.FC = () => {
                 <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Password</label>
                 <button 
                   type="button"
-                  onClick={() => setForgotPassword(true)}
+                  onClick={() => {
+                    setForgotPassword(true);
+                    setResetStep("request");
+                  }}
                   className="text-xs font-semibold text-blue-600 hover:underline"
                 >
                   Forgot password?
@@ -203,20 +339,39 @@ export const Login: React.FC = () => {
           >
             {loading ? <Loader2 className="animate-spin" /> : (
               <>
-                {forgotPassword ? "Send Reset Link" : "Sign In"}
+                {forgotPassword 
+                  ? (resetStep === "verify" ? "Update Password & Login" : "Send Reset Code") 
+                  : "Sign In"}
                 {!forgotPassword && <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />}
               </>
             )}
           </button>
 
           {forgotPassword && (
-            <button 
-              type="button"
-              onClick={() => setForgotPassword(false)}
-              className="w-full text-sm font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white"
-            >
-              Back to Login
-            </button>
+            <div className="flex items-center justify-between pt-1">
+              {resetStep === "verify" ? (
+                <button 
+                  type="button"
+                  onClick={() => setResetStep("request")}
+                  className="text-sm font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                >
+                  Change Email
+                </button>
+              ) : <div />}
+              <button 
+                type="button"
+                onClick={() => {
+                  setForgotPassword(false);
+                  setResetStep("request");
+                  setResetCode("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                }}
+                className="text-sm font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white"
+              >
+                Back to Login
+              </button>
+            </div>
           )}
         </form>
       </motion.div>

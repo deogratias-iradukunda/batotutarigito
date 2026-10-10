@@ -1277,32 +1277,6 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onPasswordChanged }) => {
 
   return (
     <div className={`transition-all duration-300 mx-auto w-full ${settingsTab === "dns" ? "max-w-4xl" : "max-w-xl"}`}>
-      {/* Tab Switcher */}
-      <div className="flex bg-slate-100 dark:bg-slate-900 p-1.5 rounded-2xl mb-6 shadow-inner border border-slate-200/50 dark:border-slate-800/50">
-        <button
-          onClick={() => setSettingsTab("password")}
-          className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            settingsTab === "password"
-              ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-md scale-[1.01]"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-          }`}
-        >
-          <Lock size={15} />
-          Account Security
-        </button>
-        <button
-          onClick={() => setSettingsTab("dns")}
-          className={`flex-1 py-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            settingsTab === "dns"
-              ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-md scale-[1.01]"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
-          }`}
-        >
-          <Mail size={15} />
-          Email Deliverability (SPF/DKIM/DMARC)
-        </button>
-      </div>
-
       {settingsTab === "password" ? (
         <div className="premium-card p-6 md:p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm">
           <div className="space-y-6">
@@ -1379,11 +1353,11 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onPasswordChanged }) => {
           <div className="border-b border-slate-100 dark:border-slate-800/80 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Shield className="text-emerald-600" size={24} />
+                <Shield className="text-emerald-500" size={24} />
                 DNS Deliverability & Spam Mitigation
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Generate SPF, DKIM, and DMARC TXT records for your custom domain registrar to assure maximum delivery on Gmail inbox accounts.
+                SPF, DKIM, and DMARC TXT record generation and domain alignment.
               </p>
             </div>
             <div className="shrink-0 flex items-center gap-2">
@@ -1392,8 +1366,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onPasswordChanged }) => {
                   ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900" 
                   : "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900"
               }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${verified ? "bg-emerald-500 animate-pulse" : "bg-amber-500 animate-pulse"}`} />
-                {verified ? "Domain Verified" : "Authentication Pending"}
+                <span className={`w-1.5 h-1.5 rounded-full ${verified ? "bg-emerald-500" : "bg-amber-500 animate-pulse"}`} />
+                {verified ? "Domain Verified & Aligned" : "Pending DNS Propagation"}
               </span>
             </div>
           </div>
@@ -1401,23 +1375,20 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onPasswordChanged }) => {
           <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-850 flex flex-col md:flex-row md:items-center gap-4 justify-between">
             <div className="space-y-1 flex-1">
               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide flex items-center gap-1">
-                <Globe size={13} className="text-blue-500" />
+                <Globe size={13} className="text-slate-400" />
                 Custom Sending Domain
               </label>
               <p className="text-[11px] text-slate-400">
-                Enter your exact domain hosted with your provider (e.g. cloudflare, goDaddy, namecheap).
+                Configure your root or mail subdomain to authenticate all outreach.
               </p>
             </div>
             <div className="w-full md:w-64">
               <input
                 type="text"
-                placeholder="e.g. batotutarigito.org"
+                placeholder="example.com or mail.example.com"
                 value={domain}
-                onChange={(e) => {
-                  setDomain(e.target.value.toLowerCase().trim());
-                  setVerified(false);
-                }}
-                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-blue-600 text-slate-900 dark:text-white font-mono"
+                onChange={(e) => setDomain(e.target.value.toLowerCase().trim())}
+                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white font-mono"
               />
             </div>
           </div>
@@ -1549,12 +1520,12 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({ onPasswordChanged }) => {
             <button
               onClick={verifyDns}
               disabled={verifying}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 dark:disabled:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-xs"
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 dark:disabled:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-xs cursor-pointer"
             >
               {verifying ? (
                 <>
                   <Loader2 className="animate-spin" size={17} />
-                  Resolving root nameservers and checking TXT records...
+                  Querying authoritative DNS nameservers...
                 </>
               ) : (
                 <>
