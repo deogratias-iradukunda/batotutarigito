@@ -31,7 +31,6 @@ import express from "express";
 import path from "path";
 import fs from "fs/promises";
 import os from "os";
-import { fileURLToPath } from "url";
 import nodemailer from "nodemailer";
 import { GoogleGenAI } from "@google/genai";
 import jwt from "jsonwebtoken";
@@ -39,9 +38,6 @@ import bcrypt from "bcryptjs";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import prisma, { getUseMockDb, setUseMockDb } from "./db.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const JWT_SECRET = process.env.JWT_SECRET || "bato_tutari_gito_secure_session_token_secret_string_2026";
 

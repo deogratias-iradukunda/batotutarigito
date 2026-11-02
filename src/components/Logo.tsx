@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 
 export const Logo: React.FC<{ className?: string, size?: "sm" | "md" | "lg" }> = ({ className = "", size = "md" }) => {
+  const [imageError, setImageError] = useState(false);
   const iconSize = size === "sm" ? 40 : size === "lg" ? 120 : 64;
   
   return (
@@ -8,7 +9,19 @@ export const Logo: React.FC<{ className?: string, size?: "sm" | "md" | "lg" }> =
       className={`relative flex items-center justify-center transition-transform duration-300 hover:scale-105 rounded-xl overflow-hidden ${className}`} 
       style={{ width: iconSize, height: iconSize }}
     >
-      <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
+      {imageError ? (
+        <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-extrabold flex items-center justify-center text-xs tracking-wider shadow-inner">
+          BTG
+        </div>
+      ) : (
+        <img 
+          src="/logo.png" 
+          alt="BatoTutariGito Logo" 
+          className="w-full h-full object-cover" 
+          onError={() => setImageError(true)}
+          loading="eager"
+        />
+      )}
     </div>
   );
 };
